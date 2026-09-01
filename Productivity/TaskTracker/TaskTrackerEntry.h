@@ -3,6 +3,8 @@
 #include <QWidget>
 #include "ui_TaskTrackerEntry.h"
 
+#include "DurationContextMenu.h"
+
 #include <QPushButton>
 #include <QLineEdit>
 
@@ -49,7 +51,9 @@ private slots:
 private:
 	void UpdateTime(int64_t begin, int64_t end, bool updateEndField = true);
 	void UpdateTime();
+	void UpdateLiveTime();
 
 	Ui::TaskTrackerEntryClass ui;
+	DurationDisplayMode durationDisplayMode = DurationDisplayMode::Default;
 	bool finished = false;
 };
