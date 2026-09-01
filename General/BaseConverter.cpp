@@ -4,7 +4,7 @@
 #include <QMetaEnum>
 #include <string>
 #include <sstream>
-#include <comdef.h>
+#include <windows.h>
 
 BaseConverter::BaseConverter(QWidget *parent)
 	: Component(parent, ToolType::BaseConverter)
@@ -61,8 +61,21 @@ void BaseConverter::InputTextChanged(QString text)
 		return;
 	}
 
-	_com_error comError(hResult);
-	ui.HROutputField->setText(QString::fromStdWString(comError.ErrorMessage()));
+	wchar_t* message{};
+	FormatMessageW(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr,
+		hResult,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		reinterpret_cast<wchar_t*>(&message),
+		0,
+		nullptr);
+
+	auto errorText = message
+		? QString::fromWCharArray(message).trimmed()
+		: QString("HRESULT 0x%1").arg(static_cast<quint32>(hResult), 8, 16, QChar('0'));
+	LocalFree(message);
+	ui.HROutputField->setText(errorText);
 
 	emit Modified(this);
 }

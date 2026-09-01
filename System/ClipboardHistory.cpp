@@ -117,7 +117,7 @@ void ClipboardHistory::OnClipboardChanged(QClipboard::Mode mode)
 		}
 
 		auto imagePath = clipboardPath / (std::to_string(dateTime.toMSecsSinceEpoch()) + ".png");
-		auto saved = image.save(QString::fromStdString(imagePath.u8string()));
+		auto saved = image.save(QString::fromStdWString(imagePath.wstring()));
 
 		if (!saved) {
 			QMessageBox::critical(QApplication::activeWindow(), "Error", "Unable to save image.");
@@ -126,7 +126,7 @@ void ClipboardHistory::OnClipboardChanged(QClipboard::Mode mode)
 
 		auto item = new QListWidgetItem(QString("[%1]\nImage [%2x%3]").arg(dateTime.toString()).arg(image.width()).arg(image.height()));
 		ImageItem imgItem{};
-		imgItem.url = QUrl::fromLocalFile(QString::fromStdString(imagePath.u8string()));
+		imgItem.url = QUrl::fromLocalFile(QString::fromStdWString(imagePath.wstring()));
 		HxUtil::Qt::setUserObject(item, imgItem);
 		ui.ClipboardList->insertItem(0, item);
 	}

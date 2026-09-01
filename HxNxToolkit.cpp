@@ -53,7 +53,7 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 	if (launchArgs.size() > 1) {
 		try {
 			std::filesystem::path tabPath(launchArgs[1].toStdString());
-			LoadTab(defaultTab, QString::fromStdString(tabPath.u8string()));
+			LoadTab(defaultTab, QString::fromStdWString(tabPath.wstring()));
 		}
 		catch (const std::exception& ex) {
 			QMessageBox errDialog(QMessageBox::Icon::Critical, "Error", "Failed to load tab.", QMessageBox::StandardButton::Ok, this);
@@ -354,8 +354,8 @@ bool HxNxToolkit::SaveTab(int idx)
 		saveFile.setFileName(newPath);
 		tab->SetSavePath(newPath);
 
-		auto tabName = std::filesystem::path(newPath.toStdString()).filename().replace_extension().u8string();
-		title = QString::fromStdString(tabName);
+		auto tabName = std::filesystem::path(newPath.toStdWString()).filename().replace_extension().wstring();
+		title = QString::fromStdWString(tabName);
 	} else {
 		saveFile.setFileName(savePath);
 	}
