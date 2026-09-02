@@ -47,6 +47,12 @@ set_target_properties(tinyexpr PROPERTIES
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
 
+add_subdirectory(3rdParty/qlementine)
+
+if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(qlementine PRIVATE /W3 /WX-)
+endif()
+
 add_executable(HxNxToolkit WIN32
     ${HXNXTOOLKIT_SOURCES}
     Assets/Resources.qrc
@@ -62,6 +68,7 @@ target_compile_definitions(HxNxToolkit PRIVATE UNICODE _UNICODE)
 
 target_link_libraries(HxNxToolkit PRIVATE
     tinyexpr
+    qlementine
     Qt6::Core
     Qt6::Gui
     Qt6::Network

@@ -36,7 +36,9 @@
     <widget class="QWidget" name="Root" native="true">
      <property name="styleSheet">
       <string notr="true">QWidget#Root {
-	border: 1px solid black;
+	background: palette(window);
+	border: 1px solid palette(bright-text);
+	border-radius: 8px;
 }</string>
      </property>
      <layout class="QVBoxLayout" name="RootLayout" stretch="0,1">
@@ -59,8 +61,29 @@
        <widget class="QWidget" name="Title" native="true">
         <property name="styleSheet">
          <string notr="true">QWidget#Title {
-	border-bottom: 1px solid black;
-	background-color: rgba(4, 4, 4, 0.05);
+	background: palette(highlight);
+	border-bottom: 1px solid palette(bright-text);
+	border-top-left-radius: 7px;
+	border-top-right-radius: 7px;
+
+}
+
+QWidget#Title QLabel {
+	color: palette(highlighted-text);
+}
+
+QWidget#Title QToolButton {
+	background: transparent;
+	border: 1px solid palette(highlighted-text);
+	border-radius: 5px;
+}
+
+QWidget#Title QToolButton:hover {
+	background: palette(bright-text);
+}
+
+QWidget#Title QToolButton:pressed {
+	background: palette(dark);
 }</string>
         </property>
         <layout class="QHBoxLayout" name="ButtonLayout" stretch="0,0,0,0,0,0">
@@ -74,16 +97,22 @@
           <number>5</number>
          </property>
          <property name="topMargin">
-          <number>0</number>
+          <number>4</number>
          </property>
          <property name="rightMargin">
           <number>0</number>
          </property>
          <property name="bottomMargin">
-          <number>0</number>
+          <number>4</number>
          </property>
          <item>
-          <widget class="QLabel" name="TitleLabel">
+         <widget class="QLabel" name="TitleLabel">
+           <property name="font">
+            <font>
+             <weight>600</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Title</string>
            </property>
@@ -106,12 +135,18 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="UpBtn">
+          <widget class="QToolButton" name="UpBtn">
            <property name="maximumSize">
             <size>
              <width>25</width>
              <height>25</height>
-            </size>
+           </size>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
            <property name="font">
             <font>
@@ -124,12 +159,18 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="DownBtn">
+          <widget class="QToolButton" name="DownBtn">
            <property name="maximumSize">
             <size>
              <width>25</width>
              <height>25</height>
-            </size>
+           </size>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
            <property name="font">
             <font>
@@ -142,12 +183,18 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="CollapseBtn">
+          <widget class="QToolButton" name="CollapseBtn">
            <property name="maximumSize">
             <size>
              <width>25</width>
              <height>25</height>
-            </size>
+           </size>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
            <property name="font">
             <font>
@@ -160,7 +207,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="CloseBtn">
+          <widget class="QToolButton" name="CloseBtn">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
              <horstretch>0</horstretch>
@@ -171,7 +218,13 @@
             <size>
              <width>25</width>
              <height>25</height>
-            </size>
+           </size>
+           </property>
+           <property name="toolButtonStyle">
+            <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
            </property>
            <property name="font">
             <font>

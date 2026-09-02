@@ -7,6 +7,11 @@
 
 #include <QPointer>
 
+namespace oclero::qlementine
+{
+class Expander;
+}
+
 class ComponentContainer : public QWidget
 {
 	Q_OBJECT
@@ -34,6 +39,9 @@ private slots:
 	void OnRenameTriggered();
 
 private:
+	void UpdateCollapseButton();
+
 	Ui::ComponentContainerClass ui;
 	QPointer<Component> component;
+	QPointer<oclero::qlementine::Expander> expander;
 };

@@ -6,5 +6,13 @@
         <file>pause.svg</file>
         <file>expand.svg</file>
         <file>collapse.svg</file>
+        <file>tool-move-up.svg</file>
+        <file>tool-move-down.svg</file>
+        <file>tool-expand.svg</file>
+        <file>tool-collapse.svg</file>
+        <file>tool-close.svg</file>
+    </qresource>
+    <qresource prefix="/themes">
+        <file alias="qlementine-dark.json">themes/qlementine-dark.json</file>
     </qresource>
 </RCC>
