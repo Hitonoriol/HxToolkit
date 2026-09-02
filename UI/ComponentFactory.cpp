@@ -5,6 +5,8 @@
 #include "General/MarkdownEditor.h"
 
 #include "Productivity/Checklist/Checklist.h"
+#include "Productivity/GitlabTasks/GitlabTasks.h"
+#include "Productivity/GitlabMergeRequests/GitlabMergeRequests.h"
 #include "Productivity/TaskTracker/TaskTracker.h"
 
 #include "Time/Stopwatch.h"
@@ -28,6 +30,8 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::MarkdownEditor, {"General", "Markdown editor", DefaultSupplier<MarkdownEditor>()}},
 
 	{ToolType::Checklist, {"Productivity", "Checklist", DefaultSupplier<Checklist>()}},
+	{ToolType::GitlabTasks, {"Productivity", "GitLab Tasks", DefaultSupplier<GitlabTasks>()}},
+	{ToolType::GitlabMergeRequests, {"Productivity", "GitLab MRs", DefaultSupplier<GitlabMergeRequests>()}},
 	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>()}},
 
 	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>()}},

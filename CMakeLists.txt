@@ -20,7 +20,7 @@ file(GLOB HXNXTOOLKIT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.ui
 )
 
-foreach(source_dir App Enums Filesystem General JSON Productivity Random System Time UI Util)
+foreach(source_dir App Enums Filesystem General Gitlab JSON Productivity Random System Time UI Util)
     file(GLOB_RECURSE directory_sources CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/*.h

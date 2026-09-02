@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>517</width>
-    <height>187</height>
+    <height>285</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
           <x>0</x>
           <y>0</y>
           <width>495</width>
-          <height>133</height>
+          <height>231</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -95,6 +95,69 @@
               </size>
              </property>
             </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="gitlabUrlLayout">
+           <item>
+            <widget class="QLabel" name="GitlabUrlLabel">
+             <property name="text">
+              <string>GitLab URL:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="GitlabUrlField">
+             <property name="placeholderText">
+              <string>https://gitlab.example.com</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="gitlabTokenLayout">
+           <item>
+            <widget class="QLabel" name="GitlabTokenLabel">
+             <property name="text">
+              <string>GitLab token:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="GitlabTokenField">
+             <property name="echoMode">
+              <enum>QLineEdit::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>Personal access token</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="gitlabTestLayout">
+           <item>
+            <spacer name="gitlabTestSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="TestGitlabConnectionButton">
+             <property name="text">
+              <string>Test GitLab connection</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -185,9 +248,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>TestGitlabConnectionButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SettingsWindowClass</receiver>
+   <slot>OnTestGitlabConnection()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>390</x>
+     <y>250</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>120</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>OnApply()</slot>
   <slot>OnCancel()</slot>
+  <slot>OnTestGitlabConnection()</slot>
  </slots>
 </ui>

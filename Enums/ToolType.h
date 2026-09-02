@@ -12,6 +12,8 @@ enum class ToolType
 	// Productivity
 	Checklist = 3,
 	TaskTracker = 4,
+	GitlabTasks = 13,
+	GitlabMergeRequests = 14,
 
 	// Time
 	Stopwatch = 5,

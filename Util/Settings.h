@@ -14,6 +14,8 @@ enum class Option
 	HideWhenMinimized,
 	HideWhenClosed,
 	RestorePreviousSession,
+	GitlabUrl,
+	GitlabToken,
 
 	// Main window settings
 	WindowMaximized,

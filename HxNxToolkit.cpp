@@ -115,6 +115,14 @@ Tab* HxNxToolkit::GetCurrentTab()
 	return dynamic_cast<Tab*>(ui.Tabs->currentWidget());
 }
 
+void HxNxToolkit::SaveCurrentTab()
+{
+	auto tab = GetCurrentTab();
+	if (tab && tab->IsModified()) {
+		SaveTab();
+	}
+}
+
 QAction* HxNxToolkit::AddComponentMenuAction(const QString& categoryName, const QString& componentName)
 {
 	auto menus = ui.MenuBar->findChildren<QMenu*>();

@@ -22,6 +22,7 @@ public:
 
 	Tab* NewTab();
 	Tab* GetCurrentTab();
+	void SaveCurrentTab();
 
 	QAction* AddComponentMenuAction(const QString& categoryName, const QString& componentName);
 
