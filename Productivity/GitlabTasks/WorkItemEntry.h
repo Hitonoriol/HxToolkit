@@ -17,8 +17,11 @@ public:
 
 private slots:
 	void OnExpandButtonPressed();
+	void OnAddTimeButtonPressed();
+	void OnRemoveTimeButtonPressed();
 	void OnTrackTimeButtonPressed();
 	void OnElapsedTimer();
+	void OnTimeLogsUpdated(const QString& updatedWorkItemId);
 
 protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent* event) override;

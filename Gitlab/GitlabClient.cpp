@@ -41,6 +41,11 @@ const std::vector<MergeRequest>& GitlabClient::getMergeRequests() const
 	return mergeRequests;
 }
 
+const std::vector<TimeLog>& GitlabClient::getTimeLogs() const
+{
+	return timeLogs;
+}
+
 WorkItem* GitlabClient::getWorkItem(const QString& workItemId)
 {
 	auto it = std::find_if(workItems.begin(), workItems.end(), [&workItemId](const WorkItem& workItem) {
@@ -102,7 +107,7 @@ void GitlabClient::PauseTracking(const QString& workItemId)
 
 	workItem->IsSubmittingElapsedTime = true;
 	emit WorkItemUpdated(workItemId);
-	AddElapsedTime(*workItem, elapsedSeconds);
+	AddElapsedTime(*workItem, QString::number(elapsedSeconds) + "s");
 }
 
 void GitlabClient::DiscardTracking(const QString& workItemId)
@@ -114,6 +119,73 @@ void GitlabClient::DiscardTracking(const QString& workItemId)
 
 	workItem->TrackingStartedAt = 0;
 	emit WorkItemUpdated(workItemId);
+}
+
+void GitlabClient::AddSpentTime(const QString& workItemId, const QString& duration)
+{
+	auto workItem = getWorkItem(workItemId);
+	if (!workItem || duration.isEmpty()) {
+		return;
+	}
+
+	AddElapsedTime(*workItem, duration);
+}
+
+void GitlabClient::getTimeLogs(const QString& workItemId)
+{
+	auto workItem = getWorkItem(workItemId);
+	if (!workItem) {
+		return;
+	}
+
+	QUrl url(Settings::GetString(Option::GitlabUrl));
+	auto apiPath = url.path();
+	if (apiPath.endsWith("/api/v4")) {
+		apiPath.chop(7);
+	}
+
+	url.setPath(apiPath + "/api/graphql");
+	QJsonObject variables;
+	variables["fullPath"] = workItem->Project;
+	variables["iid"] = QString::number(workItem->Iid);
+	QJsonObject payload;
+	payload["query"] = "query($fullPath: ID!, $iid: String!) { project(fullPath: $fullPath) { issue(iid: $iid) { timelogs(first: 100) { nodes { id timeSpent spentAt summary } } } } }";
+	payload["variables"] = variables;
+	QNetworkRequest request(url);
+	request.setRawHeader("PRIVATE-TOKEN", Settings::GetString(Option::GitlabToken).toUtf8());
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+	auto reply = networkManager.post(request, QJsonDocument(payload).toJson());
+	reply->setProperty("workItemId", workItemId);
+	connect(reply, &QNetworkReply::finished, this, &GitlabClient::OnTimeLogsReplyFinished);
+}
+
+void GitlabClient::DeleteTimeLogs(const QString& workItemId, const std::vector<QString>& timeLogIds)
+{
+	if (timeLogIds.empty()) {
+		return;
+	}
+
+	QUrl url(Settings::GetString(Option::GitlabUrl));
+	auto apiPath = url.path();
+	if (apiPath.endsWith("/api/v4")) {
+		apiPath.chop(7);
+	}
+
+	url.setPath(apiPath + "/api/graphql");
+	for (auto& timeLogId : timeLogIds) {
+		QJsonObject variables;
+		variables["id"] = timeLogId;
+		QJsonObject payload;
+		payload["query"] = "mutation($id: TimelogID!) { timelogDelete(input: { id: $id }) { errors } }";
+		payload["variables"] = variables;
+		QNetworkRequest request(url);
+		request.setRawHeader("PRIVATE-TOKEN", Settings::GetString(Option::GitlabToken).toUtf8());
+		request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+		auto reply = networkManager.post(request, QJsonDocument(payload).toJson());
+		reply->setProperty("workItemId", workItemId);
+		connect(reply, &QNetworkReply::finished, this, &GitlabClient::OnDeleteTimeLogReplyFinished);
+		++pendingTimeLogDeletions;
+	}
 }
 
 void GitlabClient::getWorkItemsPage(int page)
@@ -355,9 +427,67 @@ void GitlabClient::OnMergeRequestDiffStatsReplyFinished()
 	reply->deleteLater();
 }
 
-void GitlabClient::AddElapsedTime(WorkItem& workItem, int64_t elapsedSeconds)
+void GitlabClient::OnTimeLogsReplyFinished()
 {
-	if (elapsedSeconds <= 0) {
+	auto reply = qobject_cast<QNetworkReply*>(sender());
+	if (!reply) {
+		return;
+	}
+
+	if (reply->error() != QNetworkReply::NoError) {
+		emit requestFailed("Failed to retrieve GitLab time logs: " + reply->errorString());
+		reply->deleteLater();
+		return;
+	}
+
+	auto document = QJsonDocument::fromJson(reply->readAll());
+	auto nodes = document.object()["data"].toObject()["project"].toObject()["issue"].toObject()["timelogs"].toObject()["nodes"].toArray();
+	if (nodes.isEmpty() && !document.object()["errors"].toArray().isEmpty()) {
+		emit requestFailed(document.object()["errors"].toArray().first().toObject()["message"].toString());
+		reply->deleteLater();
+		return;
+	}
+
+	timeLogs.clear();
+	for (auto node : nodes) {
+		TimeLog timeLog;
+		timeLog.UpdateFromJson(node.toObject());
+		timeLogs.push_back(timeLog);
+	}
+
+	emit TimeLogsUpdated(reply->property("workItemId").toString());
+	reply->deleteLater();
+}
+
+void GitlabClient::OnDeleteTimeLogReplyFinished()
+{
+	auto reply = qobject_cast<QNetworkReply*>(sender());
+	if (!reply) {
+		return;
+	}
+
+	if (reply->error() != QNetworkReply::NoError) {
+		emit requestFailed("Failed to delete GitLab time log: " + reply->errorString());
+	}
+	else {
+		auto document = QJsonDocument::fromJson(reply->readAll());
+		auto errors = document.object()["data"].toObject()["timelogDelete"].toObject()["errors"].toArray();
+		if (!errors.isEmpty()) {
+			emit requestFailed("Failed to delete GitLab time log: " + errors.first().toString());
+		}
+	}
+
+	--pendingTimeLogDeletions;
+	if (pendingTimeLogDeletions == 0) {
+		getWorkItems();
+	}
+
+	reply->deleteLater();
+}
+
+void GitlabClient::AddElapsedTime(WorkItem& workItem, const QString& duration)
+{
+	if (duration.isEmpty()) {
 		return;
 	}
 
@@ -375,7 +505,7 @@ void GitlabClient::AddElapsedTime(WorkItem& workItem, int64_t elapsedSeconds)
 	url.setPath(QString("%1/projects/%2/issues/%3/add_spent_time").arg(apiPath).arg(workItem.ProjectId).arg(workItem.Iid));
 
 	QUrlQuery query;
-	query.addQueryItem("duration", QString::number(elapsedSeconds) + "s");
+	query.addQueryItem("duration", duration);
 	url.setQuery(query);
 
 	QNetworkRequest request(url);
@@ -384,7 +514,7 @@ void GitlabClient::AddElapsedTime(WorkItem& workItem, int64_t elapsedSeconds)
 
 	auto reply = networkManager.post(request, QByteArray{});
 	reply->setProperty("workItemId", workItem.Id);
-	reply->setProperty("elapsedSeconds", elapsedSeconds);
+	reply->setProperty("elapsedSeconds", duration.endsWith('s') ? duration.chopped(1).toLongLong() : 0);
 	connect(reply, &QNetworkReply::finished, this, &GitlabClient::OnAddElapsedTimeReplyFinished);
 }
 

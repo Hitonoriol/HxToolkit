@@ -6,6 +6,7 @@
 
 #include "WorkItem.h"
 #include "MergeRequest.h"
+#include "TimeLog.h"
 
 #include <cstdint>
 #include <vector>
@@ -27,6 +28,10 @@ public:
 	void StartTracking(const QString& workItemId);
 	void PauseTracking(const QString& workItemId);
 	void DiscardTracking(const QString& workItemId);
+	void AddSpentTime(const QString& workItemId, const QString& duration);
+	void getTimeLogs(const QString& workItemId);
+	const std::vector<TimeLog>& getTimeLogs() const;
+	void DeleteTimeLogs(const QString& workItemId, const std::vector<QString>& timeLogIds);
 
 signals:
 	void WorkItemsUpdated();
@@ -35,13 +40,14 @@ signals:
 	void ElapsedTimeAdded();
 	void MergeRequestsUpdated();
 	void MergeRequestUpdated(const QString& mergeRequestId);
+	void TimeLogsUpdated(const QString& workItemId);
 	void requestFailed(const QString& errorMessage);
 
 private:
 	void getWorkItemsPage(int page);
 	void getMergeRequestsPage(int page, int days, int requestId);
 	void getMergeRequestDiffStats(const MergeRequest& mergeRequest, int requestId);
-	void AddElapsedTime(WorkItem& workItem, int64_t elapsedSeconds);
+	void AddElapsedTime(WorkItem& workItem, const QString& duration);
 	bool UpdateWorkItems(const QJsonArray& items);
 
 private slots:
@@ -49,6 +55,8 @@ private slots:
 	void OnAddElapsedTimeReplyFinished();
 	void OnMergeRequestsReplyFinished();
 	void OnMergeRequestDiffStatsReplyFinished();
+	void OnTimeLogsReplyFinished();
+	void OnDeleteTimeLogReplyFinished();
 
 private:
 	QNetworkAccessManager networkManager;
@@ -56,5 +64,7 @@ private:
 	QJsonArray fetchedMergeRequests;
 	std::vector<WorkItem> workItems;
 	std::vector<MergeRequest> mergeRequests;
+	std::vector<TimeLog> timeLogs;
 	int mergeRequestRequestId = 0;
+	int pendingTimeLogDeletions = 0;
 };

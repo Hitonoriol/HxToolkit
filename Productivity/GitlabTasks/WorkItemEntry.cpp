@@ -2,10 +2,16 @@
 
 #include "Gitlab/GitlabClient.h"
 #include "Gitlab/WorkItem.h"
+#include "TimeLogDialog.h"
 
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QTimer>
+#include <QTimeEdit>
+#include <QTime>
+#include <QVBoxLayout>
 
 WorkItemEntry::WorkItemEntry(GitlabClient* gitlabClient, const WorkItem& workItem, QWidget* parent)
 	: QFrame(parent)
@@ -15,6 +21,8 @@ WorkItemEntry::WorkItemEntry(GitlabClient* gitlabClient, const WorkItem& workIte
 	ui.headerLayout->setStretch(1, 1);
 	ui.titleLayout->setStretch(0, 1);
 	ui.ExpandButton->setIcon(QIcon(":/icons/expand.svg"));
+	ui.AddTimeButton->setStyleSheet("color: #3daee9;");
+	ui.RemoveTimeButton->setStyleSheet("color: #d65d5d;");
 	ui.TrackTimeButton->setIcon(QIcon(":/icons/play.svg"));
 	ui.TrackTimeButton->installEventFilter(this);
 	ui.DescriptionValueBrowser->setOpenExternalLinks(true);
@@ -25,6 +33,7 @@ WorkItemEntry::WorkItemEntry(GitlabClient* gitlabClient, const WorkItem& workIte
 	auto elapsedTimer = new QTimer(this);
 	connect(elapsedTimer, &QTimer::timeout, this, &WorkItemEntry::OnElapsedTimer);
 	elapsedTimer->start(1'000);
+	connect(gitlabClient, &GitlabClient::TimeLogsUpdated, this, &WorkItemEntry::OnTimeLogsUpdated);
 
 	UpdateWorkItem(workItem);
 }
@@ -48,6 +57,29 @@ void WorkItemEntry::OnExpandButtonPressed()
 	ui.ExpandButton->setIcon(QIcon(expanded ? ":/icons/collapse.svg" : ":/icons/expand.svg"));
 }
 
+void WorkItemEntry::OnAddTimeButtonPressed()
+{
+	QDialog dialog(this);
+	dialog.setWindowTitle("Add logged time");
+	auto layout = new QVBoxLayout(&dialog);
+	auto timeEdit = new QTimeEdit(QTime(0, 0), &dialog);
+	timeEdit->setDisplayFormat("HH:mm");
+	auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+	layout->addWidget(timeEdit);
+	layout->addWidget(buttonBox);
+	connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+	connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+	if (dialog.exec() == QDialog::Accepted && timeEdit->time() != QTime(0, 0)) {
+		gitlabClient->AddSpentTime(workItemId, QString("%1h %2m").arg(timeEdit->time().hour()).arg(timeEdit->time().minute()));
+	}
+}
+
+void WorkItemEntry::OnRemoveTimeButtonPressed()
+{
+	gitlabClient->getTimeLogs(workItemId);
+}
+
 void WorkItemEntry::OnTrackTimeButtonPressed()
 {
 	auto workItem = gitlabClient->getWorkItem(workItemId);
@@ -68,6 +100,18 @@ void WorkItemEntry::OnElapsedTimer()
 	auto workItem = gitlabClient->getWorkItem(workItemId);
 	if (workItem) {
 		ui.ElapsedValueLabel->setText(workItem->getElapsedTimeString());
+	}
+}
+
+void WorkItemEntry::OnTimeLogsUpdated(const QString& updatedWorkItemId)
+{
+	if (updatedWorkItemId != workItemId) {
+		return;
+	}
+
+	TimeLogDialog dialog(gitlabClient->getTimeLogs(), this);
+	if (dialog.exec() == QDialog::Accepted) {
+		gitlabClient->DeleteTimeLogs(workItemId, dialog.getDeletedTimeLogIds());
 	}
 }
 
