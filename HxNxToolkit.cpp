@@ -9,7 +9,9 @@
 #include <QDateTime>
 #include <QMessageBox>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonParseError>
 #include <QFile>
 #include <QDir>
 #include <QFileDialog>
@@ -51,14 +53,7 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 	auto launchArgs = QApplication::arguments();
 
 	if (launchArgs.size() > 1) {
-		try {
-			std::filesystem::path tabPath(launchArgs[1].toStdString());
-			LoadTab(defaultTab, QString::fromStdWString(tabPath.wstring()));
-		}
-		catch (const std::exception& ex) {
-			QMessageBox errDialog(QMessageBox::Icon::Critical, "Error", "Failed to load tab.", QMessageBox::StandardButton::Ok, this);
-			errDialog.exec();
-		}
+		LoadTab(defaultTab, launchArgs[1]);
 	}
 	else if (Settings::GetBool(Option::RestorePreviousSession)) {
 		auto path = Settings::GetString(Option::LastSavedTabPath);
@@ -396,8 +391,6 @@ bool HxNxToolkit::SaveTab()
 
 void HxNxToolkit::LoadTab()
 {
-	auto tab = NewTab();
-
 	QFileDialog dialog(this);
 	dialog.setDirectory({Settings::GetString(Option::LastSaveDir)});
 	dialog.setFileMode(QFileDialog::ExistingFile);
@@ -412,23 +405,95 @@ void HxNxToolkit::LoadTab()
 		return;
 	}
 
-	LoadTab(tab, tabPath);
+	auto tab = NewTab();
+	if (!LoadTab(tab, tabPath)) {
+		ui.Tabs->removeTab(ui.Tabs->indexOf(tab));
+		tab->deleteLater();
+	}
 }
 
-void HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
+bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
 {
 	QFile tabFile(tabPath);
 	if (!tabFile.open(QFile::ReadOnly)) {
-		return;
+		ShowTabLoadError("The file could not be opened.");
+		return false;
 	}
 
-	auto tabDoc = QJsonDocument::fromJson(tabFile.readAll());
+	QJsonParseError parseError;
+	auto tabDoc = QJsonDocument::fromJson(tabFile.readAll(), &parseError);
+	if (parseError.error != QJsonParseError::NoError || !tabDoc.isObject()) {
+		ShowTabLoadError("The file does not contain a valid tab document.");
+		return false;
+	}
+
 	auto tabObject = tabDoc.object();
+	if (!tabObject["Title"].isString() || !tabObject["Components"].isArray() || !tabObject["ExpandMode"].isDouble()) {
+		ShowTabLoadError("The tab document is missing required data.");
+		return false;
+	}
+
+	auto expandMode = tabObject["ExpandMode"].toInt();
+	if (expandMode != static_cast<int>(Tab::ExpandMode::MinSize) && expandMode != static_cast<int>(Tab::ExpandMode::Fill)) {
+		ShowTabLoadError("The tab document has an invalid expand mode.");
+		return false;
+	}
+
+	auto components = tabObject["Components"].toArray();
+	if (components.size() > 50) {
+		ShowTabLoadError("The tab document contains too many components.");
+		return false;
+	}
+
+	for (auto componentValue : components) {
+		auto componentObject = componentValue.toObject();
+		if (componentObject.isEmpty() || !componentObject["Type"].isDouble() || !componentObject["Container"].isObject()) {
+			ShowTabLoadError("The tab document has invalid component data.");
+			return false;
+		}
+
+		auto componentType = static_cast<ToolType>(componentObject["Type"].toInt());
+		switch (componentType) {
+		case ToolType::BaseConverter:
+		case ToolType::Calculator:
+		case ToolType::MarkdownEditor:
+		case ToolType::Checklist:
+		case ToolType::TaskTracker:
+		case ToolType::GitlabTasks:
+		case ToolType::GitlabMergeRequests:
+		case ToolType::Stopwatch:
+		case ToolType::Timer:
+		case ToolType::RandomNumber:
+		case ToolType::RandomString:
+		case ToolType::FileSearch:
+		case ToolType::RamMonitor:
+		case ToolType::ClipboardManager:
+			break;
+
+		default:
+			ShowTabLoadError("The tab document contains an unsupported component.");
+			return false;
+		}
+	}
+
+	try {
+		tab->LoadState(tabObject);
+	}
+	catch (const std::exception&) {
+		ShowTabLoadError("The tab document could not be loaded.");
+		return false;
+	}
+
 	ui.Tabs->setTabText(ui.Tabs->currentIndex(), tabObject["Title"].toString());
-	tab->LoadState(tabObject);
 	tab->SetSavePath(tabPath);
-	tab->SetExpandMode(static_cast<Tab::ExpandMode>(tabObject["ExpandMode"].toInt()));
+	tab->SetExpandMode(static_cast<Tab::ExpandMode>(expandMode));
 	Settings::Set(Option::LastSavedTabPath, tabPath);
+	return true;
+}
+
+void HxNxToolkit::ShowTabLoadError(const QString& errorMessage)
+{
+	QMessageBox::critical(this, "Unable to load tab", errorMessage);
 }
 
 void HxNxToolkit::SetTabTitle(int tabIdx, const QString& newTitle)

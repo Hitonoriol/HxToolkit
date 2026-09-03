@@ -23,12 +23,15 @@ public slots:
 
 private slots:
 	void OnWorkItemsUpdated();
+	void OnProjectChanged();
 	void OnWorkItemsChanged();
 	void OnWorkItemUpdated();
 	void OnElapsedTimeAdded();
 	void OnGitlabRequestFailed(const QString& errorMessage);
 
 private:
+	void UpdateWorkItemList();
+
 	Ui::GitlabTasksClass ui;
 	GitlabClient* gitlabClient;
 	bool isRefreshing = false;

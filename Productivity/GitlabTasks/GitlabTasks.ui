@@ -29,6 +29,16 @@
    <item>
     <layout class="QHBoxLayout" name="headerLayout">
      <item>
+      <widget class="QComboBox" name="ProjectCombo">
+       <property name="minimumSize">
+        <size>
+         <width>220</width>
+         <height>0</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="StatusLabel">
        <property name="text">
         <string>Work items have not been refreshed.</string>

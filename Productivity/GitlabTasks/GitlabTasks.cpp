@@ -3,10 +3,12 @@
 #include "Gitlab/GitlabClient.h"
 #include "Gitlab/WorkItem.h"
 #include "HxNxToolkit.h"
-#include "ProjectEntry.h"
 #include "WorkItemEntry.h"
 
+#include <QComboBox>
 #include <QJsonArray>
+#include <QSet>
+#include <QSignalBlocker>
 #include <QTimer>
 
 GitlabTasks::GitlabTasks(QWidget* parent)
@@ -21,6 +23,7 @@ GitlabTasks::GitlabTasks(QWidget* parent)
 	connect(gitlabClient, &GitlabClient::WorkItemUpdated, this, &GitlabTasks::OnWorkItemUpdated);
 	connect(gitlabClient, &GitlabClient::ElapsedTimeAdded, this, &GitlabTasks::OnElapsedTimeAdded);
 	connect(gitlabClient, &GitlabClient::requestFailed, this, &GitlabTasks::OnGitlabRequestFailed);
+	connect(ui.ProjectCombo, &QComboBox::currentTextChanged, this, &GitlabTasks::OnProjectChanged);
 
 	auto refreshTimer = new QTimer(this);
 	connect(refreshTimer, &QTimer::timeout, this, &GitlabTasks::RefreshWorkItems);
@@ -38,6 +41,7 @@ QJsonObject GitlabTasks::SaveState()
 {
 	auto state = Component::SaveState();
 	state["WorkItems"] = gitlabClient->SaveState();
+	state["ProjectId"] = ui.ProjectCombo->currentData().toInt();
 	return state;
 }
 
@@ -45,6 +49,11 @@ void GitlabTasks::LoadState(const QJsonObject& state)
 {
 	Component::LoadState(state);
 	gitlabClient->LoadState(state["WorkItems"].toArray());
+
+	auto projectIdx = ui.ProjectCombo->findData(state["ProjectId"].toInt());
+	if (projectIdx >= 0) {
+		ui.ProjectCombo->setCurrentIndex(projectIdx);
+	}
 }
 
 void GitlabTasks::RefreshWorkItems()
@@ -60,52 +69,58 @@ void GitlabTasks::RefreshWorkItems()
 
 void GitlabTasks::OnWorkItemsUpdated()
 {
-	for (auto& workItem : gitlabClient->getCachedWorkItems()) {
-		auto projectId = QString::number(workItem.ProjectId);
-		auto projectEntry = ui.WorkItemsContents->findChild<ProjectEntry*>(projectId, Qt::FindDirectChildrenOnly);
-		if (!projectEntry) {
-			projectEntry = new ProjectEntry(workItem.Project, ui.WorkItemsContents);
-			projectEntry->setObjectName(projectId);
-			ui.WorkItemLayout->insertWidget(ui.WorkItemLayout->indexOf(ui.BottomSpacer), projectEntry);
+	const auto selectedProjectId = ui.ProjectCombo->currentData().toInt();
+	QSignalBlocker projectComboBlocker(ui.ProjectCombo);
+	QSet<int> projectIds;
+	ui.ProjectCombo->clear();
+
+	for (const auto& workItem : gitlabClient->getCachedWorkItems()) {
+		if (!projectIds.contains(workItem.ProjectId)) {
+			ui.ProjectCombo->addItem(workItem.Project, workItem.ProjectId);
+			projectIds.insert(workItem.ProjectId);
+		}
+	}
+
+	auto projectIdx = ui.ProjectCombo->findData(selectedProjectId);
+	ui.ProjectCombo->setCurrentIndex(projectIdx >= 0 ? projectIdx : 0);
+	UpdateWorkItemList();
+
+	isRefreshing = false;
+	ui.StatusLabel->setText(QString("%1 work items").arg(gitlabClient->getCachedWorkItems().size()));
+}
+
+void GitlabTasks::OnProjectChanged()
+{
+	UpdateWorkItemList();
+}
+
+void GitlabTasks::UpdateWorkItemList()
+{
+	const auto selectedProjectId = ui.ProjectCombo->currentData().toInt();
+	for (const auto& workItem : gitlabClient->getCachedWorkItems()) {
+		if (workItem.ProjectId != selectedProjectId) {
+			continue;
 		}
 
-		auto entry = projectEntry->findChild<WorkItemEntry*>(workItem.Id);
+		auto entry = ui.WorkItemsContents->findChild<WorkItemEntry*>(workItem.Id, Qt::FindDirectChildrenOnly);
 		if (!entry) {
-			entry = new WorkItemEntry(gitlabClient, workItem, projectEntry);
+			entry = new WorkItemEntry(gitlabClient, workItem, ui.WorkItemsContents);
 			entry->setObjectName(workItem.Id);
-			projectEntry->AddWorkItemEntry(entry);
+			ui.WorkItemLayout->insertWidget(ui.WorkItemLayout->indexOf(ui.BottomSpacer), entry);
 		}
 		else {
 			entry->UpdateWorkItem(workItem);
 		}
 	}
 
-	auto entries = ui.WorkItemsContents->findChildren<WorkItemEntry*>();
+	auto entries = ui.WorkItemsContents->findChildren<WorkItemEntry*>(QString{}, Qt::FindDirectChildrenOnly);
 	for (auto entry : entries) {
-		if (!gitlabClient->getWorkItem(entry->objectName())) {
+		auto workItem = gitlabClient->getWorkItem(entry->objectName());
+		if (!workItem || workItem->ProjectId != selectedProjectId) {
 			ui.WorkItemLayout->removeWidget(entry);
 			delete entry;
 		}
 	}
-
-	auto projects = ui.WorkItemsContents->findChildren<ProjectEntry*>(QString{}, Qt::FindDirectChildrenOnly);
-	for (auto project : projects) {
-		int inProgressTaskCount{};
-		for (auto& workItem : gitlabClient->getCachedWorkItems()) {
-			if (QString::number(workItem.ProjectId) == project->objectName() && workItem.isTracking()) {
-				++inProgressTaskCount;
-			}
-		}
-
-		project->SetInProgressTaskCount(inProgressTaskCount);
-		if (project->findChildren<WorkItemEntry*>().isEmpty()) {
-			ui.WorkItemLayout->removeWidget(project);
-			delete project;
-		}
-	}
-
-	isRefreshing = false;
-	ui.StatusLabel->setText(QString("%1 work items").arg(gitlabClient->getCachedWorkItems().size()));
 }
 
 void GitlabTasks::OnWorkItemUpdated()
