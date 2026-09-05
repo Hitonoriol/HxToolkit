@@ -14,6 +14,7 @@
 #include "Random/RandomString.h"
 
 #include "Filesystem/FileSearch.h"
+#include "Filesystem/SymlinkMover.h"
 
 #include "System/RamMonitor.h"
 #include "System/ClipboardHistory.h"
@@ -63,8 +64,9 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::RandomNumber, {"Random", "Random number", DefaultSupplier<RandomNumber>()}},
 	{ToolType::RandomString, {"Random", "Random string", DefaultSupplier<RandomString>()}},
 	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
-	{ToolType::RamMonitor, {"System", "RAM Monitor", DefaultSupplier<RamMonitor>()}},
-	{ToolType::ClipboardManager, {"System", "Clipboard History", DefaultSupplier<ClipboardHistory>()}}
+	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
+	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>()}},
+	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}}
 };
 
 void ComponentFactory::Register(HxNxToolkit* toolkit)
