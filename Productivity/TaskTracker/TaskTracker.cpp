@@ -40,7 +40,6 @@ void TaskTracker::LoadState(const QJsonObject& state)
 	auto entries = state["Tasks"].toArray();
 	if (!entries.isEmpty()) {
 		ui.StartButton->setVisible(false);
-		ui.DurationWidget->setEnabled(false);
 	}
 
 	for (auto entry : entries) {
@@ -108,16 +107,11 @@ void TaskTracker::UpdateTotalTime()
 
 	ui.TimeLabel->setText("Time spent: " + Time::GetTimeString(totalDuration));
 
-	auto lastEntry = taskEntries.last();
-	if (lastEntry && !lastEntry->IsFinished()) {
-		lastEntry->GetEndButton()->setVisible(Time::GetHours(totalDuration) < ui.SessionDurationBox->value());
-	}
 }
 
 void TaskTracker::OnStartSessionPress()
 {
 	AddTaskEntry();
 	ui.StartButton->setVisible(false);
-	ui.DurationWidget->setEnabled(false);
 	emit Modified(this);
 }

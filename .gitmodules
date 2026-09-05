@@ -1,0 +1,4 @@
+[submodule "3rdParty/qlementine"]
+	path = 3rdParty/qlementine
+	url = https://github.com/oclero/qlementine.git
+	branch = dev

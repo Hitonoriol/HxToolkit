@@ -5,9 +5,15 @@
 #include <QLocale>
 #include <QTranslator>
 
+#include <oclero/qlementine.hpp>
+
 int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
+
+    auto style = new oclero::qlementine::QlementineStyle(&a);
+    style->setThemeJsonPath(":/themes/qlementine-dark.json");
+    QApplication::setStyle(style);
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();

@@ -1,11 +1,47 @@
 #include "TaskTrackerEntry.h"
 
+#include "TimeContextMenu.h"
 #include "Util/Time.h"
+
+#include <QSignalBlocker>
+#include <QTimer>
 
 TaskTrackerEntry::TaskTrackerEntry(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
+	ui.StartField->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui.StartField, &QWidget::customContextMenuRequested, ui.StartField, [this](const QPoint& position) {
+		TimeContextMenu menu(ui.StartField);
+		menu.exec(ui.StartField->mapToGlobal(position));
+	});
+
+	ui.EndField->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui.EndField, &QWidget::customContextMenuRequested, ui.EndField, [this](const QPoint& position) {
+		TimeContextMenu menu(ui.EndField);
+		menu.exec(ui.EndField->mapToGlobal(position));
+	});
+
+	ui.DurationField->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui.DurationField, &QWidget::customContextMenuRequested, this, [this](const QPoint& position) {
+		DurationContextMenu menu(durationDisplayMode, ui.DurationField);
+		connect(&menu, &DurationContextMenu::DisplayModeSelected, this, [this](DurationDisplayMode mode) {
+			durationDisplayMode = mode;
+
+			if (finished) {
+				UpdateTime();
+			}
+			else {
+				UpdateLiveTime();
+			}
+		});
+		menu.exec(ui.DurationField->mapToGlobal(position));
+	});
+
+	auto liveTimeTimer = new QTimer(this);
+	connect(liveTimeTimer, &QTimer::timeout, this, &TaskTrackerEntry::UpdateLiveTime);
+	liveTimeTimer->start(1000);
+	SetFinished(false);
 }
 
 TaskTrackerEntry::~TaskTrackerEntry()
@@ -75,6 +111,12 @@ bool TaskTrackerEntry::IsFinished()
 void TaskTrackerEntry::SetFinished(bool value)
 {
 	finished = value;
+	ui.EndField->setStyleSheet(finished ? "" : "color: palette(mid);");
+	ui.DurationField->setStyleSheet(finished ? "" : "color: palette(mid);");
+
+	if (!finished) {
+		UpdateLiveTime();
+	}
 }
 
 QLineEdit* TaskTrackerEntry::GetEndField()
@@ -95,7 +137,12 @@ void TaskTrackerEntry::OnEndFieldModified(QString newTime)
 
 void TaskTrackerEntry::OnStartFieldModified(QString newTime)
 {
-	UpdateTime();
+	if (finished) {
+		UpdateTime();
+	}
+	else {
+		UpdateLiveTime();
+	}
 	emit StartFieldModified(newTime);
 }
 
@@ -116,8 +163,9 @@ void TaskTrackerEntry::UpdateTime(int64_t begin, int64_t end, bool updateEndFiel
 		ui.EndField->setText(QTime::fromMSecsSinceStartOfDay(end).toString("hh:mm"));
 	}
 
-	ui.DurationField->setText(Time::GetTimeString(diff));
-	ui.DurationHoursField->setText(QString::number(hours, 'f', 2));
+	ui.DurationField->setText(durationDisplayMode == DurationDisplayMode::Hours
+		? QString::number(hours, 'f', 2)
+		: Time::GetTimeString(diff));
 }
 
 void TaskTrackerEntry::UpdateTime()
@@ -136,7 +184,6 @@ void TaskTrackerEntry::UpdateTime()
 	}
 	catch (...) {
 		ui.DurationField->setText("");
-		ui.DurationHoursField->setText("");
 	}
 }
 
@@ -146,9 +193,32 @@ void TaskTrackerEntry::OnEndButtonPress()
 	auto endTime = QTime::currentTime();
 	endTime.setHMS(endTime.hour(), endTime.minute(), 0); // Ignore seconds
 
-	finished = true;
+	SetFinished(true);
 	UpdateTime(startTime.msecsSinceStartOfDay(), endTime.msecsSinceStartOfDay());
 	ui.EndButton->setVisible(false);
 	ui.EndField->setReadOnly(false);
 	emit EndButtonPressed();
+}
+
+void TaskTrackerEntry::UpdateLiveTime()
+{
+	if (finished) {
+		return;
+	}
+
+	auto now = QTime::currentTime();
+	auto endFieldChangeBlocker = QSignalBlocker(ui.EndField);
+	ui.EndField->setText(now.toString("hh:mm"));
+
+	auto start = QTime::fromString(ui.StartField->text(), "hh:mm");
+	if (!start.isValid()) {
+		start = QTime::fromString(ui.StartField->text(), "h:mm");
+	}
+
+	if (start.isValid()) {
+		UpdateTime(start.msecsSinceStartOfDay(), now.msecsSinceStartOfDay(), false);
+	}
+	else {
+		ui.DurationField->clear();
+	}
 }

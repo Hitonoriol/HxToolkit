@@ -22,6 +22,7 @@ public:
 
 	Tab* NewTab();
 	Tab* GetCurrentTab();
+	void SaveCurrentTab();
 
 	QAction* AddComponentMenuAction(const QString& categoryName, const QString& componentName);
 
@@ -60,7 +61,8 @@ private:
 	bool SaveTab(int idx);
 	bool SaveTab();
 	void LoadTab();
-	void LoadTab(Tab* tab, const QString& tabPath);
+	bool LoadTab(Tab* tab, const QString& tabPath);
+	void ShowTabLoadError(const QString& errorMessage);
 
 	void SetTabTitle(int tabIdx, const QString& newTitle);
 	QString GetTabTitle(int tabIdx);

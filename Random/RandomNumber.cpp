@@ -2,6 +2,7 @@
 #include "JSON/Serialization.h"
 
 #include <QMetaEnum>
+#include <cfloat>
 
 RandomNumber::RandomNumber(QWidget *parent)
 	: Component(parent, ToolType::RandomNumber)

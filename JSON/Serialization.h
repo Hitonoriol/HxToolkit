@@ -14,6 +14,6 @@ do { \
     HX_JOIN(__VA_ARGS__) \
 } while(0);
 
-#define HX_SERIALIZE(_object, _getter) _json[HX_STR(_object)] = _object##->##_getter##()
+#define HX_SERIALIZE(_object, _getter) _json[HX_STR(_object)] = _object->_getter()
 
-#define HX_DESERIALIZE(_object, _setter, _jsonGetter) _object##->##_setter##(_json[HX_STR(_object)]##.##_jsonGetter##())
+#define HX_DESERIALIZE(_object, _setter, _jsonGetter) _object->_setter(_json[HX_STR(_object)]._jsonGetter())

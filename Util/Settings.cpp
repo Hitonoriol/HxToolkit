@@ -6,7 +6,7 @@
 QSettings& Settings::Instance()
 {
 	static auto configPath = GetPath() / "hxnxtk_config.ini";
-	static QSettings instance(configPath.u8string().data(), QSettings::IniFormat);
+	static QSettings instance(QString::fromStdWString(configPath.wstring()), QSettings::IniFormat);
 	return instance;
 }
 

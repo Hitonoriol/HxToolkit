@@ -1,0 +1,15 @@
+{
+  "name": "hxnx-toolkit",
+  "version-string": "0.1.0",
+  "builtin-baseline": "d5ec528843d29e3a52d745a64b469f810b2cedbf",
+  "dependencies": [
+    "qtbase",
+    "qtsvg"
+  ],
+  "overrides": [
+    {
+      "name": "qtbase",
+      "version": "6.8.3"
+    }
+  ]
+}

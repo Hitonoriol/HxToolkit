@@ -1,0 +1,117 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "x64-windows-clang-release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/x64-windows/release",
+            "environment": {
+                "VCPKG_DEFAULT_TRIPLET": "x64-windows",
+                "VCPKG_DEFAULT_HOST_TRIPLET": "x64-windows",
+                "AR": "llvm-lib",
+                "RANLIB": "llvm-ranlib"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang-cl",
+                "CMAKE_CXX_COMPILER": "clang-cl",
+                "CMAKE_LINKER": "lld-link.exe",
+                "CMAKE_AR": "llvm-lib",
+                "CMAKE_RANLIB": "llvm-ranlib",
+                "CMAKE_C_COMPILER_AR": "llvm-lib",
+                "CMAKE_CXX_COMPILER_AR": "llvm-lib",
+                "CMAKE_C_COMPILER_RANLIB": "llvm-ranlib",
+                "CMAKE_CXX_COMPILER_RANLIB": "llvm-ranlib",
+                "CMAKE_PREFIX_PATH": "${sourceDir}/build/x64-windows/release/vcpkg_installed/x64-windows/share/cmake",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_MANIFEST_MODE": "ON",
+                "VCPKG_TARGET_TRIPLET": "x64-windows",
+                "VCPKG_HOST_TRIPLET": "x64-windows"
+            }
+        },
+        {
+            "name": "x64-windows-clang-debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/x64-windows/debug",
+            "environment": {
+                "VCPKG_DEFAULT_TRIPLET": "x64-windows",
+                "VCPKG_DEFAULT_HOST_TRIPLET": "x64-windows",
+                "AR": "llvm-lib",
+                "RANLIB": "llvm-ranlib"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang-cl",
+                "CMAKE_CXX_COMPILER": "clang-cl",
+                "CMAKE_LINKER": "lld-link.exe",
+                "CMAKE_AR": "llvm-lib",
+                "CMAKE_RANLIB": "llvm-ranlib",
+                "CMAKE_C_COMPILER_AR": "llvm-lib",
+                "CMAKE_CXX_COMPILER_AR": "llvm-lib",
+                "CMAKE_C_COMPILER_RANLIB": "llvm-ranlib",
+                "CMAKE_CXX_COMPILER_RANLIB": "llvm-ranlib",
+                "CMAKE_PREFIX_PATH": "${sourceDir}/build/x64-windows/debug/vcpkg_installed/x64-windows/share/cmake",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_MANIFEST_MODE": "ON",
+                "VCPKG_TARGET_TRIPLET": "x64-windows",
+                "VCPKG_HOST_TRIPLET": "x64-windows"
+            }
+        },
+        {
+            "name": "x64-windows-mingw-local-qt-release-base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/x64-windows-local-qt/release",
+            "environment": {
+                "PATH": "$env{QT_ROOT}/bin;$env{MINGW_ROOT}/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "$env{MINGW_ROOT}/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "$env{MINGW_ROOT}/bin/g++.exe",
+                "CMAKE_PREFIX_PATH": "$env{QT_ROOT}"
+            }
+        },
+        {
+            "name": "x64-windows-mingw-local-qt-debug-base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/x64-windows-local-qt/debug",
+            "environment": {
+                "PATH": "$env{QT_ROOT}/bin;$env{MINGW_ROOT}/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "$env{MINGW_ROOT}/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "$env{MINGW_ROOT}/bin/g++.exe",
+                "CMAKE_PREFIX_PATH": "$env{QT_ROOT}"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "x64-windows-clang-release",
+            "configurePreset": "x64-windows-clang-release",
+            "configuration": "x64-windows-clang-release",
+            "jobs": 12
+        },
+        {
+            "name": "x64-windows-clang-debug",
+            "configurePreset": "x64-windows-clang-debug",
+            "configuration": "x64-windows-clang-debug",
+            "jobs": 12
+        },
+        {
+            "name": "x64-windows-mingw-local-qt-release-base",
+            "hidden": true,
+            "configurePreset": "x64-windows-mingw-local-qt-release-base",
+            "jobs": 12
+        },
+        {
+            "name": "x64-windows-mingw-local-qt-debug-base",
+            "hidden": true,
+            "configurePreset": "x64-windows-mingw-local-qt-debug-base",
+            "jobs": 12
+        }
+    ]
+}
