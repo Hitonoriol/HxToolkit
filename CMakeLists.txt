@@ -46,6 +46,23 @@ set_target_properties(tinyexpr PROPERTIES
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
+find_package(Git REQUIRED)
+
+set(QLEMENTINE_COMBOBOX_PATCH "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/patches/qlementine-combobox-fix.patch")
+set(QLEMENTINE_COMBOBOX_FILTER "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp")
+file(READ "${QLEMENTINE_COMBOBOX_FILTER}" qlementineComboboxFilter)
+string(FIND "${qlementineComboboxFilter}" "_isResolvingView" qlementineComboboxPatchIdx)
+if(qlementineComboboxPatchIdx EQUAL -1)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" apply "${QLEMENTINE_COMBOBOX_PATCH}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine"
+        RESULT_VARIABLE qlementinePatchResult
+        ERROR_VARIABLE qlementinePatchError
+    )
+    if(NOT qlementinePatchResult EQUAL 0)
+        message(FATAL_ERROR "Failed to apply Qlementine combobox patch: ${qlementinePatchError}")
+    endif()
+endif()
 
 add_subdirectory(3rdParty/qlementine)
 

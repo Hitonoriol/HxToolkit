@@ -19,8 +19,10 @@ public:
 	explicit GitlabClient(QObject* parent = nullptr);
 
 	void getWorkItems();
+	void getTimeStats(const QDateTime& updatedAfter, const QDateTime& updatedBefore);
 	void getMergeRequests(int days);
 	const std::vector<WorkItem>& getCachedWorkItems() const;
+	const std::vector<WorkItem>& getTimeStats() const;
 	const std::vector<MergeRequest>& getMergeRequests() const;
 	WorkItem* getWorkItem(const QString& workItemId);
 	QJsonArray SaveState() const;
@@ -35,6 +37,7 @@ public:
 
 signals:
 	void WorkItemsUpdated();
+	void TimeStatsUpdated();
 	void WorkItemsChanged();
 	void WorkItemUpdated(const QString& workItemId);
 	void ElapsedTimeAdded();
@@ -45,6 +48,8 @@ signals:
 
 private:
 	void getWorkItemsPage(int page);
+	void getTimeStatsPage(int page, const QDateTime& updatedAfter, const QDateTime& updatedBefore, int requestId);
+	void getTimeStatsTimeLogs(const WorkItem& workItem, int requestId);
 	void getMergeRequestsPage(int page, int days, int requestId);
 	void getMergeRequestDiffStats(const MergeRequest& mergeRequest, int requestId);
 	void AddElapsedTime(WorkItem& workItem, const QString& duration);
@@ -52,6 +57,8 @@ private:
 
 private slots:
 	void OnWorkItemsReplyFinished();
+	void OnTimeStatsReplyFinished();
+	void OnTimeStatsTimeLogsReplyFinished();
 	void OnAddElapsedTimeReplyFinished();
 	void OnMergeRequestsReplyFinished();
 	void OnMergeRequestDiffStatsReplyFinished();
@@ -63,8 +70,13 @@ private:
 	QJsonArray fetchedWorkItems;
 	QJsonArray fetchedMergeRequests;
 	std::vector<WorkItem> workItems;
+	std::vector<WorkItem> timeStats;
 	std::vector<MergeRequest> mergeRequests;
 	std::vector<TimeLog> timeLogs;
 	int mergeRequestRequestId = 0;
+	int timeStatsRequestId = 0;
+	int pendingTimeStatsTimeLogs = 0;
+	QDateTime timeStatsStart;
+	QDateTime timeStatsEnd;
 	int pendingTimeLogDeletions = 0;
 };

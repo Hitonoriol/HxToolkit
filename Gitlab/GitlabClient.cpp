@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QTimeZone>
 #include <QUrlQuery>
 
 #include <algorithm>
@@ -23,6 +24,17 @@ void GitlabClient::getWorkItems()
 	getWorkItemsPage(1);
 }
 
+void GitlabClient::getTimeStats(const QDateTime& updatedAfter, const QDateTime& updatedBefore)
+{
+	++timeStatsRequestId;
+	fetchedWorkItems = {};
+	timeStats.clear();
+	timeStatsStart = updatedAfter;
+	timeStatsEnd = updatedBefore;
+	pendingTimeStatsTimeLogs = 0;
+	getTimeStatsPage(1, updatedAfter, updatedBefore, timeStatsRequestId);
+}
+
 void GitlabClient::getMergeRequests(int days)
 {
 	++mergeRequestRequestId;
@@ -34,6 +46,11 @@ void GitlabClient::getMergeRequests(int days)
 const std::vector<WorkItem>& GitlabClient::getCachedWorkItems() const
 {
 	return workItems;
+}
+
+const std::vector<WorkItem>& GitlabClient::getTimeStats() const
+{
+	return timeStats;
 }
 
 const std::vector<MergeRequest>& GitlabClient::getMergeRequests() const
@@ -229,6 +246,74 @@ void GitlabClient::getWorkItemsPage(int page)
 	connect(reply, &QNetworkReply::finished, this, &GitlabClient::OnWorkItemsReplyFinished);
 }
 
+void GitlabClient::getTimeStatsPage(int page, const QDateTime& updatedAfter, const QDateTime& updatedBefore, int requestId)
+{
+	auto gitlabUrl = Settings::GetString(Option::GitlabUrl);
+	auto token = Settings::GetString(Option::GitlabToken);
+	if (gitlabUrl.isEmpty() || token.isEmpty()) {
+		emit requestFailed("GitLab URL and token must be configured in Settings.");
+		return;
+	}
+
+	QUrl url(gitlabUrl);
+	if (!url.isValid() || url.scheme().isEmpty() || url.host().isEmpty()) {
+		emit requestFailed("The configured GitLab URL is invalid.");
+		return;
+	}
+
+	auto apiPath = url.path();
+	while (apiPath.endsWith('/')) {
+		apiPath.chop(1);
+	}
+
+	if (!apiPath.endsWith("/api/v4")) {
+		apiPath += "/api/v4";
+	}
+
+	url.setPath(apiPath + "/issues");
+	QUrlQuery query;
+	query.addQueryItem("scope", "assigned_to_me");
+	query.addQueryItem("state", "all");
+	query.addQueryItem("updated_after", updatedAfter.toUTC().toString(Qt::ISODate));
+	query.addQueryItem("updated_before", updatedBefore.toUTC().toString(Qt::ISODate));
+	query.addQueryItem("per_page", "100");
+	query.addQueryItem("page", QString::number(page));
+	url.setQuery(query);
+
+	QNetworkRequest request(url);
+	request.setRawHeader("PRIVATE-TOKEN", token.toUtf8());
+	request.setRawHeader("Accept", "application/json");
+	auto reply = networkManager.get(request);
+	reply->setProperty("timeStatsRequestId", requestId);
+	reply->setProperty("updatedAfter", updatedAfter);
+	reply->setProperty("updatedBefore", updatedBefore);
+	connect(reply, &QNetworkReply::finished, this, &GitlabClient::OnTimeStatsReplyFinished);
+}
+
+void GitlabClient::getTimeStatsTimeLogs(const WorkItem& workItem, int requestId)
+{
+	QUrl url(Settings::GetString(Option::GitlabUrl));
+	auto apiPath = url.path();
+	if (apiPath.endsWith("/api/v4")) {
+		apiPath.chop(7);
+	}
+
+	url.setPath(apiPath + "/api/graphql");
+	QJsonObject variables;
+	variables["fullPath"] = workItem.Project;
+	variables["iid"] = QString::number(workItem.Iid);
+	QJsonObject payload;
+	payload["query"] = "query($fullPath: ID!, $iid: String!) { project(fullPath: $fullPath) { issue(iid: $iid) { timelogs(first: 100) { nodes { timeSpent spentAt } } } } }";
+	payload["variables"] = variables;
+	QNetworkRequest request(url);
+	request.setRawHeader("PRIVATE-TOKEN", Settings::GetString(Option::GitlabToken).toUtf8());
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+	auto reply = networkManager.post(request, QJsonDocument(payload).toJson());
+	reply->setProperty("timeStatsRequestId", requestId);
+	reply->setProperty("workItemId", workItem.Id);
+	connect(reply, &QNetworkReply::finished, this, &GitlabClient::OnTimeStatsTimeLogsReplyFinished);
+}
+
 void GitlabClient::getMergeRequestsPage(int page, int days, int requestId)
 {
 	auto gitlabUrl = Settings::GetString(Option::GitlabUrl);
@@ -335,6 +420,106 @@ void GitlabClient::OnWorkItemsReplyFinished()
 	if (workItemsChanged) {
 		emit WorkItemsChanged();
 	}
+}
+
+void GitlabClient::OnTimeStatsReplyFinished()
+{
+	auto reply = qobject_cast<QNetworkReply*>(sender());
+	if (!reply) {
+		return;
+	}
+
+	if (reply->property("timeStatsRequestId").toInt() != timeStatsRequestId) {
+		reply->deleteLater();
+		return;
+	}
+
+	if (reply->error() != QNetworkReply::NoError) {
+		emit requestFailed("GitLab request failed: " + reply->errorString());
+		reply->deleteLater();
+		return;
+	}
+
+	auto document = QJsonDocument::fromJson(reply->readAll());
+	if (!document.isArray()) {
+		emit requestFailed("GitLab returned an unexpected response while retrieving time statistics.");
+		reply->deleteLater();
+		return;
+	}
+
+	for (auto item : document.array()) {
+		fetchedWorkItems.append(item);
+	}
+
+	auto nextPage = reply->rawHeader("X-Next-Page");
+	auto updatedAfter = reply->property("updatedAfter").toDateTime();
+	auto updatedBefore = reply->property("updatedBefore").toDateTime();
+	reply->deleteLater();
+	if (!nextPage.isEmpty()) {
+		getTimeStatsPage(nextPage.toInt(), updatedAfter, updatedBefore, timeStatsRequestId);
+		return;
+	}
+
+	for (auto item : fetchedWorkItems) {
+		WorkItem workItem;
+		workItem.UpdateFromJson(item.toObject());
+		workItem.GitlabElapsedSeconds = 0;
+		timeStats.push_back(workItem);
+	}
+
+	pendingTimeStatsTimeLogs = timeStats.size();
+	if (pendingTimeStatsTimeLogs == 0) {
+		emit TimeStatsUpdated();
+		return;
+	}
+
+	for (auto& workItem : timeStats) {
+		getTimeStatsTimeLogs(workItem, timeStatsRequestId);
+	}
+}
+
+void GitlabClient::OnTimeStatsTimeLogsReplyFinished()
+{
+	auto reply = qobject_cast<QNetworkReply*>(sender());
+	if (!reply) {
+		return;
+	}
+
+	if (reply->property("timeStatsRequestId").toInt() != timeStatsRequestId) {
+		reply->deleteLater();
+		return;
+	}
+
+	if (reply->error() != QNetworkReply::NoError) {
+		emit requestFailed("Failed to retrieve GitLab time logs: " + reply->errorString());
+	}
+	else {
+		auto document = QJsonDocument::fromJson(reply->readAll());
+		auto workItemId = reply->property("workItemId").toString();
+		auto it = std::find_if(timeStats.begin(), timeStats.end(), [&workItemId](const WorkItem& workItem) {
+			return workItem.Id == workItemId;
+		});
+		if (it != timeStats.end()) {
+			for (auto node : document.object()["data"].toObject()["project"].toObject()["issue"].toObject()["timelogs"].toObject()["nodes"].toArray()) {
+				auto timeLog = node.toObject();
+				auto spentAt = QDateTime::fromString(timeLog["spentAt"].toString(), Qt::ISODate);
+				if (!spentAt.isValid()) {
+					spentAt = QDateTime(QDate::fromString(timeLog["spentAt"].toString(), Qt::ISODate), QTime(), timeStatsStart.timeZone());
+				}
+
+				if (spentAt >= timeStatsStart && spentAt < timeStatsEnd) {
+					it->GitlabElapsedSeconds += timeLog["timeSpent"].toVariant().toLongLong();
+				}
+			}
+		}
+	}
+
+	--pendingTimeStatsTimeLogs;
+	if (pendingTimeStatsTimeLogs == 0) {
+		emit TimeStatsUpdated();
+	}
+
+	reply->deleteLater();
 }
 
 void GitlabClient::OnMergeRequestsReplyFinished()

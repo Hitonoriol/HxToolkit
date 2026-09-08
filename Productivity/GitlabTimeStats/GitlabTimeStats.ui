@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GitlabTimeStatsClass</class>
+ <widget class="QWidget" name="GitlabTimeStatsClass">
+  <property name="windowTitle"><string>Gitlab Time Stats</string></property>
+  <layout class="QVBoxLayout" name="VerticalLayout">
+   <property name="leftMargin"><number>0</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>0</number></property><property name="bottomMargin"><number>0</number></property>
+   <item><layout class="QHBoxLayout" name="HeaderLayout">
+    <item><widget class="QComboBox" name="PeriodComboBox"><property name="minimumSize"><size><width>150</width><height>0</height></size></property><property name="maxVisibleItems"><number>3</number></property><item><property name="text"><string>Current Week</string></property></item><item><property name="text"><string>Past Week</string></property></item><item><property name="text"><string>Past Month</string></property></item></widget></item>
+    <item><widget class="QComboBox" name="GroupComboBox"><property name="minimumSize"><size><width>150</width><height>0</height></size></property><property name="maxVisibleItems"><number>3</number></property><item><property name="text"><string>Per project</string></property></item><item><property name="text"><string>Per task</string></property></item></widget></item>
+    <item><spacer name="HeaderSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+    <item><widget class="QLabel" name="TotalLabel"><property name="text"><string>Total tracked: 0h 00m</string></property></widget></item>
+   </layout></item>
+   <item><widget class="QLabel" name="StatusLabel"><property name="text"><string>Time statistics have not been retrieved.</string></property></widget></item>
+   <item><widget class="QScrollArea" name="ChartScrollArea"><property name="widgetResizable"><bool>true</bool></property><widget class="QWidget" name="ChartContents"><layout class="QVBoxLayout" name="ChartLayout"><property name="leftMargin"><number>0</number></property><property name="topMargin"><number>0</number></property><property name="rightMargin"><number>0</number></property><property name="bottomMargin"><number>0</number></property></layout></widget></widget></item>
+  </layout>
+ </widget>
+ <resources/><connections/>
+</ui>

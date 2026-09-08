@@ -14,6 +14,7 @@ enum class ToolType
 	TaskTracker = 4,
 	GitlabTasks = 13,
 	GitlabMergeRequests = 14,
+	GitlabTimeStats = 15,
 
 	// Time
 	Stopwatch = 5,

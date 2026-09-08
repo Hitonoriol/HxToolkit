@@ -461,6 +461,7 @@ bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
 		case ToolType::TaskTracker:
 		case ToolType::GitlabTasks:
 		case ToolType::GitlabMergeRequests:
+		case ToolType::GitlabTimeStats:
 		case ToolType::Stopwatch:
 		case ToolType::Timer:
 		case ToolType::RandomNumber:

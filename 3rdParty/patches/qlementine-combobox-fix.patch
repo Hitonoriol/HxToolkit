@@ -1,0 +1,41 @@
+diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
+index d189a64..0e2c6bc 100644
+--- a/lib/src/style/QlementineStyle.cpp
++++ b/lib/src/style/QlementineStyle.cpp
+@@ -4917,7 +4917,7 @@ void QlementineStyle::polish(QWidget* w) {
+       const auto shadowWidth = _impl->theme.spacing;
+       const auto borderWidth = _impl->theme.borderWidth;
+       const auto margin = shadowWidth + borderWidth;
+-      popup->layout()->setContentsMargins(margin, margin, margin, margin);
++      popup->setContentsMargins(margin, margin, margin, margin);
+ 
+       itemView->viewport()->setAutoFillBackground(false);
+       auto* comboBox = findFirstParentOfType<QComboBox>(itemView);
+diff --git a/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp b/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp
+index 5426109..d06c54c 100644
+--- a/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp
++++ b/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp
+@@ -53,10 +53,13 @@ protected:
+   bool eventFilter(QObject* watchedObject, QEvent* evt) override {
+     switch (evt->type()) {
+       case QEvent::Type::ChildAdded: {
+-        if (watchedObject == _comboBox) {
++        if (watchedObject == _comboBox && !_isResolvingView) {
+           const auto* childEvent = static_cast<QChildEvent*>(evt);
+           const auto* child = childEvent->child();
+-          if (child == _comboBox->view()) {
++          _isResolvingView = true;
++          const auto* view = _comboBox->view();
++          _isResolvingView = false;
++          if (child == view) {
+             if (auto* qlementine = qobject_cast<QlementineStyle*>(_comboBox->style())) {
+               if (isDefaultItemDelegate(_comboBox->itemDelegate())) {
+                 _comboBox->setItemDelegate(new ComboBoxDelegate(_comboBox, *qlementine));
+@@ -163,6 +166,7 @@ private:
+   QComboBox* _comboBox{ nullptr };
+   QAbstractItemView* _view{ nullptr };
+   int _initialMaxHeight{ 0 };
++  bool _isResolvingView{ false };
+   QModelIndex _clickedIndex{};
+ };
+ 
