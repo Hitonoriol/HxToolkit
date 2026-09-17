@@ -27,17 +27,17 @@
 #include <QMessageBox>
 
 std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
-	{ToolType::BaseConverter, {"General", "Base converter", DefaultSupplier<BaseConverter>()}},
-	{ToolType::Calculator, {"General", "Calculator", DefaultSupplier<Calculator>()}},
+	{ToolType::BaseConverter, {"General", "Base converter", DefaultSupplier<BaseConverter>(false)}},
+	{ToolType::Calculator, {"General", "Calculator", DefaultSupplier<Calculator>(false)}},
 	{ToolType::MarkdownEditor, {"General", "Markdown editor", DefaultSupplier<MarkdownEditor>()}},
 
-	{ToolType::Checklist, {"Productivity", "Checklist", DefaultSupplier<Checklist>()}},
+	{ToolType::Checklist, {"Productivity", "Checklist", DefaultSupplier<Checklist>(false)}},
 	{ToolType::GitlabTasks, {"Productivity", "GitLab Tasks", DefaultSupplier<GitlabTasks>()}},
 	{ToolType::GitlabMergeRequests, {"Productivity", "GitLab MRs", DefaultSupplier<GitlabMergeRequests>()}},
 	{ToolType::GitlabTimeStats, {"Productivity", "Gitlab Time Stats", DefaultSupplier<GitlabTimeStats>()}},
-	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>()}},
+	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>(false)}},
 
-	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>()}},
+	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>(false)}},
 
 	{ToolType::Timer, {"Time", "Timer", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
 		auto timer = new Timer;
@@ -63,15 +63,15 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 			tab = toolkit->NewTab();
 		}
 
-		tab->AddComponent(timer, name);
+		tab->AddComponent(timer, name, false);
 		return timer;
 	}}},
 
-	{ToolType::RandomNumber, {"Random", "Random number", DefaultSupplier<RandomNumber>()}},
-	{ToolType::RandomString, {"Random", "Random string", DefaultSupplier<RandomString>()}},
+	{ToolType::RandomNumber, {"Random", "Random number", DefaultSupplier<RandomNumber>(false)}},
+	{ToolType::RandomString, {"Random", "Random string", DefaultSupplier<RandomString>(false)}},
 	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
-	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>()}},
+	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>(false)}},
 	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}}
 };
 

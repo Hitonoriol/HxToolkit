@@ -1,15 +1,20 @@
 #include "Tab.h"
 #include "ComponentContainer.h"
 
-#include <QGroupBox>
 #include <QVBoxLayout>
-#include <QSpacerItem>
 #include <QJsonArray>
+#include <QButtonGroup>
 
 Tab::Tab(QWidget* parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
+	ui.RootLayout->setAlignment(ui.ToolbarLayout, Qt::AlignTop);
+
+	auto splitButtonGroup = new QButtonGroup(this);
+	splitButtonGroup->addButton(ui.HorizontalSplitBtn);
+	splitButtonGroup->addButton(ui.VerticalSplitBtn);
+	ui.VerticalSplitBtn->setChecked(true);
 }
 
 Tab::~Tab()
@@ -31,68 +36,58 @@ QString Tab::GetSavePath() const
 	return savePath;
 }
 
-void Tab::AddComponent(Component* component, const QString& title)
+void Tab::AddComponent(Component* component, const QString& title, bool fillContainer)
 {
-	auto scrollLayout = dynamic_cast<QBoxLayout*>(ui.Scroll->widget()->layout());
-	assert(scrollLayout);
-
 	auto container = new ComponentContainer(component, this);
 	container->setTitle(title);
-	scrollLayout->addWidget(container);
-	
-	if (expandMode == ExpandMode::MinSize) {
-		UpdateBottomSpacer();
+	container->setFillContainer(fillContainer);
+	auto row = GetLastRow();
+
+	if (!row || ui.VerticalSplitBtn->isChecked()) {
+		row = new QWidget(this);
+		auto rowLayout = new QHBoxLayout(row);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(0);
+		ui.WorkspaceLayout->addWidget(row, 1);
 	}
+
+	auto rowLayout = dynamic_cast<QBoxLayout*>(row->layout());
+	assert(rowLayout);
+	rowLayout->addWidget(container, 1);
 
 	connect(component, &Component::Modified, this, &Tab::ComponentModified);
 	connect(container, &ComponentContainer::CloseClicked, this, std::bind(&Tab::OnComponentClosed, this, container));
-	connect(container, &ComponentContainer::UpClicked, this, std::bind(&Tab::OnComponentMoved, this, container, -1));
-	connect(container, &ComponentContainer::DownClicked, this, std::bind(&Tab::OnComponentMoved, this, container, 1));
 
 	emit ComponentModified(nullptr);
 }
 
-void Tab::OnComponentClosed(ComponentContainer* container) {
-	container->deleteLater();
-	Modify();
-}
-
-void Tab::OnComponentMoved(ComponentContainer* container, int direction) {
-	auto scrollLayout = dynamic_cast<QBoxLayout*>(ui.Scroll->widget()->layout());
-	assert(scrollLayout);
-
-	auto prevIdx = scrollLayout->indexOf(container);
-	auto newIdx = prevIdx + direction;
-
-	if (newIdx < 0) {
-		return;
-	}
-
-	if (expandMode == ExpandMode::MinSize && newIdx >= scrollLayout->indexOf(ui.BottomSpacer)) {
-		return;
-	}
-
-	scrollLayout->insertWidget(newIdx, container);
-
-	Modify();
-}
-
-void Tab::UpdateBottomSpacer()
+void Tab::OnComponentClosed(ComponentContainer* container)
 {
-	auto scrollLayout = dynamic_cast<QBoxLayout*>(ui.Scroll->widget()->layout());
-	assert(scrollLayout);
+	auto row = container->parentWidget();
+	row->layout()->removeWidget(container);
+	container->deleteLater();
 
-	scrollLayout->removeItem(ui.BottomSpacer);
-	scrollLayout->addItem(ui.BottomSpacer);
-	scrollLayout->setStretch(scrollLayout->count() - 1, 1); // Stretch bottom spacer to take up as much space as possible
+	if (row->layout()->isEmpty()) {
+		ui.WorkspaceLayout->removeWidget(row);
+		row->deleteLater();
+	}
+
+	Modify();
+}
+QWidget* Tab::GetLastRow() const
+{
+	if (ui.WorkspaceLayout->isEmpty()) {
+		return {};
+	}
+
+	return ui.WorkspaceLayout->itemAt(ui.WorkspaceLayout->count() - 1)->widget();
 }
 
 QJsonObject Tab::SaveState()
 {
 	QJsonObject state;
 	QJsonArray arr;
-	auto scrollLayout = ui.Scroll->widget();
-	auto components = scrollLayout->findChildren<Component*>();
+	auto components = findChildren<Component*>();
 	for (auto& component : components) {
 		arr.append(component->SaveState());
 	}
@@ -126,35 +121,4 @@ void Tab::Modify()
 {
 	emit TabModified(this);
 	modified = true;
-}
-
-Tab::ExpandMode Tab::GetExpandMode()
-{
-	return expandMode;
-}
-
-void Tab::SetExpandMode(ExpandMode mode)
-{
-	if (expandMode == mode) {
-		return;
-	}
-
-	auto scrollLayout = dynamic_cast<QBoxLayout*>(ui.Scroll->widget()->layout());
-	assert(scrollLayout);
-
-	expandMode = mode;
-
-	switch (mode) {
-	case ExpandMode::MinSize:
-		UpdateBottomSpacer();
-		break;
-
-	case ExpandMode::Fill:
-		scrollLayout->removeItem(ui.BottomSpacer);
-		break;
-
-	default:
-		throw std::runtime_error("Unknown ExpandMode");
-		break;
-	}
 }

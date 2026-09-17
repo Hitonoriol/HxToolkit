@@ -11,6 +11,8 @@
         <file>tool-expand.svg</file>
         <file>tool-collapse.svg</file>
         <file>tool-close.svg</file>
+        <file>split-horizontal.svg</file>
+        <file>split-vertical.svg</file>
     </qresource>
     <qresource prefix="/themes">
         <file alias="qlementine-dark.json">themes/qlementine-dark.json</file>

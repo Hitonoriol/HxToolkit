@@ -7,11 +7,6 @@
 
 #include <QPointer>
 
-namespace oclero::qlementine
-{
-class Expander;
-}
-
 class ComponentContainer : public QWidget
 {
 	Q_OBJECT
@@ -25,11 +20,10 @@ public:
 
 	void setTitle(const QString& title);
 	QString getTitle();
+	void setFillContainer(bool fill);
 
 signals:
 	void CloseClicked();
-	void UpClicked();
-	void DownClicked();
 	void CollapseClicked(bool collapse);
 
 private slots:
@@ -43,5 +37,4 @@ private:
 
 	Ui::ComponentContainerClass ui;
 	QPointer<Component> component;
-	QPointer<oclero::qlementine::Expander> expander;
 };

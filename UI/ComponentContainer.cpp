@@ -5,8 +5,6 @@
 #include <QIcon>
 #include <QToolButton>
 
-#include <oclero/qlementine/widgets/Expander.hpp>
-
 ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 	: QWidget(parent)
 	, component(component)
@@ -14,27 +12,15 @@ ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 	ui.setupUi(this);
 	component->container = this;
 
-	auto contentExpander = new oclero::qlementine::Expander(this);
-	contentExpander->setExpanded(true);
-	ui.RootLayout->replaceWidget(ui.Content, contentExpander);
-	contentExpander->setContent(ui.Content);
-	expander = contentExpander;
-
 	ui.Content->layout()->addWidget(component);
 	ui.Title->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
-	ui.UpBtn->setIcon(QIcon(":/icons/tool-move-up.svg"));
-	ui.DownBtn->setIcon(QIcon(":/icons/tool-move-down.svg"));
 	ui.CloseBtn->setIcon(QIcon(":/icons/tool-close.svg"));
 	UpdateCollapseButton();
+	ui.Title->setMaximumHeight(ui.Title->sizeHint().height());
 
 	connect(ui.CloseBtn, &QToolButton::clicked, this, &ComponentContainer::CloseClicked);
-	connect(ui.UpBtn, &QToolButton::clicked, this, &ComponentContainer::UpClicked);
-	connect(ui.DownBtn, &QToolButton::clicked, this, &ComponentContainer::DownClicked);
 	connect(ui.CollapseBtn, &QToolButton::clicked, this, &ComponentContainer::OnCollapseClicked);
 	connect(ui.Title, &QWidget::customContextMenuRequested, this, &ComponentContainer::OnTitleContextMenuRequested);
-	connect(expander, &oclero::qlementine::Expander::expandedChanged, this, [this] {
-		UpdateCollapseButton();
-	});
 }
 
 ComponentContainer::~ComponentContainer()
@@ -65,15 +51,33 @@ QString ComponentContainer::getTitle()
 	return ui.TitleLabel->text();
 }
 
+void ComponentContainer::setFillContainer(bool fill)
+{
+	auto lastItem = ui.ContentLayout->itemAt(ui.ContentLayout->count() - 1);
+	const bool hasSpacer = lastItem && lastItem->spacerItem();
+
+	if (fill == !hasSpacer) {
+		return;
+	}
+
+	if (fill) {
+		delete ui.ContentLayout->takeAt(ui.ContentLayout->count() - 1);
+	} else {
+		ui.ContentLayout->addStretch();
+	}
+}
+
 void ComponentContainer::OnCollapseClicked()
 {
-	expander->toggleExpanded();
-	emit CollapseClicked(!expander->expanded());
+	const bool collapse = !ui.Content->isHidden();
+	ui.Content->setVisible(!collapse);
+	UpdateCollapseButton();
+	emit CollapseClicked(collapse);
 }
 
 void ComponentContainer::UpdateCollapseButton()
 {
-	const bool expanded = expander->expanded();
+	const bool expanded = !ui.Content->isHidden();
 	ui.CollapseBtn->setIcon(QIcon(expanded ? ":/icons/tool-collapse.svg" : ":/icons/tool-expand.svg"));
 	ui.CollapseBtn->setToolTip(expanded ? "Collapse tool" : "Expand tool");
 }

@@ -4,8 +4,6 @@
 #include "ui_Tab.h"
 
 #include "UI/Component.h"
-#include "Enums/ToolType.h"
-
 #include <QJsonObject>
 
 class Tab : public QWidget
@@ -13,18 +11,13 @@ class Tab : public QWidget
 	Q_OBJECT
 
 public:
-	enum class ExpandMode {
-		MinSize,
-		Fill
-	};
-
 	Tab(QWidget* parent = nullptr);
 	~Tab();
 
 	void SetSavePath(const QString& savePath);
 	QString GetSavePath() const;
 
-	void AddComponent(Component* component, const QString& title = "Tool");
+	void AddComponent(Component* component, const QString& title = "Tool", bool fillContainer = true);
 
 	QJsonObject SaveState();
 	void LoadState(const QJsonObject& state);
@@ -33,9 +26,6 @@ public:
 
 	// For external modifications only
 	void Modify();
-
-	ExpandMode GetExpandMode();
-	void SetExpandMode(ExpandMode mode);
 
 signals:
 	void LoadComponent(ToolType componentType, const QJsonObject& state);
@@ -46,14 +36,12 @@ signals:
 private slots:
 	void ComponentModified(Component* component);
 	void OnComponentClosed(ComponentContainer* component);
-	void OnComponentMoved(ComponentContainer* component, int direction);
 
 private:
-	void UpdateBottomSpacer();
+	QWidget* GetLastRow() const;
 
 	Ui::TabClass ui;
 
-	ExpandMode expandMode = ExpandMode::MinSize;
 	QString savePath;
 	bool modified{};
 };

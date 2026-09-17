@@ -35,16 +35,16 @@ public:
 
 private:
 	template<class C>
-	static NamedComponentSupplier DefaultSupplier()
+	static NamedComponentSupplier DefaultSupplier(bool fillContainer = true)
 	{
-		return [&](HxNxToolkit* toolkit, const QString& name) {
+		return [fillContainer](HxNxToolkit* toolkit, const QString& name) {
 			auto component = new C;
 			auto tab = toolkit->GetCurrentTab();
 			if (!tab) {
 				tab = toolkit->NewTab();
 			}
 
-			tab->AddComponent(component, name);
+			tab->AddComponent(component, name, fillContainer);
 			return component;
 		};
 	}
