@@ -19,6 +19,7 @@ enum class ToolType
 	// Time
 	Stopwatch = 5,
 	Timer = 6,
+	DateCountdown = 17,
 
 	// Random
 	RandomNumber = 7,

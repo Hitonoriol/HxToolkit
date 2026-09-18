@@ -2,6 +2,7 @@
     <qresource prefix="/icons">
         <file>icon-app.ico</file>
         <file>refresh.svg</file>
+        <file>clock.svg</file>
         <file>play.svg</file>
         <file>pause.svg</file>
         <file>expand.svg</file>

@@ -67,6 +67,11 @@ void ComponentContainer::setFillContainer(bool fill)
 	}
 }
 
+bool ComponentContainer::getCollapsed() const
+{
+	return ui.Content->isHidden();
+}
+
 void ComponentContainer::OnCollapseClicked()
 {
 	const bool collapse = !ui.Content->isHidden();

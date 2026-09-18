@@ -12,6 +12,7 @@
 
 #include "Time/Stopwatch.h"
 #include "Time/Timer.h"
+#include "Time/DateCountdown.h"
 
 #include "Random/RandomNumber.h"
 #include "Random/RandomString.h"
@@ -39,6 +40,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>(false)}},
 
 	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>(false)}},
+	{ToolType::DateCountdown, {"Time", "Date Countdown", DefaultSupplier<DateCountdown>(false)}},
 
 	{ToolType::Timer, {"Time", "Timer", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
 		auto timer = new Timer;

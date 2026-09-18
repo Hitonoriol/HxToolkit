@@ -39,6 +39,8 @@ private slots:
 
 private:
 	QWidget* GetLastRow() const;
+	void OnComponentCollapse(ComponentContainer* container, bool collapse);
+	void UpdateRowStretch(QWidget* row);
 
 	Ui::TabClass ui;
 

@@ -21,6 +21,7 @@ public:
 	void setTitle(const QString& title);
 	QString getTitle();
 	void setFillContainer(bool fill);
+	bool getCollapsed() const;
 
 signals:
 	void CloseClicked();

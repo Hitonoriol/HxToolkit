@@ -54,9 +54,13 @@ void Tab::AddComponent(Component* component, const QString& title, bool fillCont
 	auto rowLayout = dynamic_cast<QBoxLayout*>(row->layout());
 	assert(rowLayout);
 	rowLayout->addWidget(container, 1);
+	UpdateRowStretch(row);
 
 	connect(component, &Component::Modified, this, &Tab::ComponentModified);
 	connect(container, &ComponentContainer::CloseClicked, this, std::bind(&Tab::OnComponentClosed, this, container));
+	connect(container, &ComponentContainer::CollapseClicked, this, [this, container](bool collapse) {
+		OnComponentCollapse(container, collapse);
+	});
 
 	emit ComponentModified(nullptr);
 }
@@ -70,10 +74,47 @@ void Tab::OnComponentClosed(ComponentContainer* container)
 	if (row->layout()->isEmpty()) {
 		ui.WorkspaceLayout->removeWidget(row);
 		row->deleteLater();
+	} else {
+		UpdateRowStretch(row);
 	}
 
 	Modify();
 }
+
+void Tab::OnComponentCollapse(ComponentContainer* container, bool collapse)
+{
+	auto row = container->parentWidget();
+	auto rowLayout = dynamic_cast<QBoxLayout*>(row->layout());
+	assert(rowLayout);
+	auto containerSizePolicy = container->sizePolicy();
+	containerSizePolicy.setVerticalPolicy(collapse ? QSizePolicy::Maximum : QSizePolicy::Preferred);
+	container->setSizePolicy(containerSizePolicy);
+	rowLayout->setAlignment(container, collapse ? Qt::AlignTop : Qt::Alignment{});
+	UpdateRowStretch(row);
+}
+
+void Tab::UpdateRowStretch(QWidget* row)
+{
+	auto rowLayout = dynamic_cast<QBoxLayout*>(row->layout());
+	assert(rowLayout);
+	bool hasExpandedComponent = false;
+
+	for (int itemIdx = 0; itemIdx < rowLayout->count(); ++itemIdx) {
+		auto container = dynamic_cast<ComponentContainer*>(rowLayout->itemAt(itemIdx)->widget());
+
+		if (container && !container->getCollapsed()) {
+			hasExpandedComponent = true;
+			break;
+		}
+	}
+
+	ui.WorkspaceLayout->setStretchFactor(row, hasExpandedComponent ? 1 : 0);
+	auto rowSizePolicy = row->sizePolicy();
+	rowSizePolicy.setVerticalPolicy(hasExpandedComponent ? QSizePolicy::Preferred : QSizePolicy::Maximum);
+	row->setSizePolicy(rowSizePolicy);
+	row->updateGeometry();
+}
+
 QWidget* Tab::GetLastRow() const
 {
 	if (ui.WorkspaceLayout->isEmpty()) {
