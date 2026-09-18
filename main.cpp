@@ -1,4 +1,5 @@
 #include "HxNxToolkit.h"
+#include "System/KeystrokeListener.h"
 
 #include <QApplication>
 
@@ -10,6 +11,7 @@
 int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
+    KeystrokeListener keystrokeListener(&a);
 
     auto style = new oclero::qlementine::QlementineStyle(&a);
     style->setThemeJsonPath(":/themes/qlementine-dark.json");

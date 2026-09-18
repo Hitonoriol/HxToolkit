@@ -451,6 +451,7 @@ bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
 		case ToolType::FileSearch:
 		case ToolType::RamMonitor:
 		case ToolType::ClipboardManager:
+		case ToolType::SystemShortcuts:
 			break;
 
 		default:

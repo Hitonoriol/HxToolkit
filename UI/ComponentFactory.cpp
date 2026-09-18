@@ -21,6 +21,7 @@
 
 #include "System/RamMonitor.h"
 #include "System/ClipboardHistory.h"
+#include "System/SystemShortcuts.h"
 
 #include "UI/Tab.h"
 
@@ -72,7 +73,8 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
 	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>(false)}},
-	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}}
+	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}},
+	{ToolType::SystemShortcuts, {"System", "System Shortcuts", DefaultSupplier<SystemShortcuts>(false)}}
 };
 
 void ComponentFactory::Register(HxNxToolkit* toolkit)

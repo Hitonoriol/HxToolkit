@@ -30,5 +30,6 @@ enum class ToolType
 
 	// System
 	RamMonitor = 11,
-	ClipboardManager = 12
+	ClipboardManager = 12,
+	SystemShortcuts = 16
 };
