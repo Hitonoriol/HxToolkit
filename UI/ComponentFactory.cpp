@@ -2,6 +2,7 @@
 
 #include "General/BaseConverter.h"
 #include "General/Calculator.h"
+#include "General/ColorPicker.h"
 #include "General/MarkdownEditor.h"
 
 #include "Productivity/Checklist/Checklist.h"
@@ -31,6 +32,7 @@
 std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::BaseConverter, {"General", "Base converter", DefaultSupplier<BaseConverter>(false)}},
 	{ToolType::Calculator, {"General", "Calculator", DefaultSupplier<Calculator>(false)}},
+	{ToolType::ColorPicker, {"General", "Color picker", DefaultSupplier<ColorPicker>(false)}},
 	{ToolType::MarkdownEditor, {"General", "Markdown editor", DefaultSupplier<MarkdownEditor>()}},
 
 	{ToolType::Checklist, {"Productivity", "Checklist", DefaultSupplier<Checklist>(false)}},

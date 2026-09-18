@@ -438,6 +438,7 @@ bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
 		switch (componentType) {
 		case ToolType::BaseConverter:
 		case ToolType::Calculator:
+		case ToolType::ColorPicker:
 		case ToolType::MarkdownEditor:
 		case ToolType::Checklist:
 		case ToolType::TaskTracker:

@@ -8,6 +8,7 @@ enum class ToolType
 	BaseConverter = 1,
 	Calculator = 2,
 	MarkdownEditor = 10,
+	ColorPicker = 18,
 
 	// Productivity
 	Checklist = 3,
