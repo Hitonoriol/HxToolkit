@@ -36,9 +36,9 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::MarkdownEditor, {"General", "Markdown editor", DefaultSupplier<MarkdownEditor>()}},
 
 	{ToolType::Checklist, {"Productivity", "Checklist", DefaultSupplier<Checklist>(false)}},
-	{ToolType::GitlabTasks, {"Productivity", "GitLab Tasks", DefaultSupplier<GitlabTasks>()}},
-	{ToolType::GitlabMergeRequests, {"Productivity", "GitLab MRs", DefaultSupplier<GitlabMergeRequests>()}},
-	{ToolType::GitlabTimeStats, {"Productivity", "Gitlab Time Stats", DefaultSupplier<GitlabTimeStats>()}},
+	{ToolType::GitlabTasks, {"GitLab", "GitLab Tasks", DefaultSupplier<GitlabTasks>()}},
+	{ToolType::GitlabMergeRequests, {"GitLab", "GitLab MRs", DefaultSupplier<GitlabMergeRequests>()}},
+	{ToolType::GitlabTimeStats, {"GitLab", "GitLab Time Stats", DefaultSupplier<GitlabTimeStats>()}},
 	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>(false)}},
 
 	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>(false)}},
