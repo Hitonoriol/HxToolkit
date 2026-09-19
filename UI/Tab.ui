@@ -16,8 +16,7 @@
      <property name="topMargin"><number>5</number></property>
      <property name="rightMargin"><number>5</number></property>
      <property name="bottomMargin"><number>0</number></property>
-     <item><widget class="QToolButton" name="HorizontalSplitBtn"><property name="toolTip"><string>Horizontal split</string></property><property name="checkable"><bool>true</bool></property><property name="autoExclusive"><bool>true</bool></property><property name="icon"><iconset resource="../Assets/Resources.qrc"><normaloff>:/icons/split-horizontal.svg</normaloff></iconset></property></widget></item>
-     <item><widget class="QToolButton" name="VerticalSplitBtn"><property name="toolTip"><string>Vertical split</string></property><property name="checkable"><bool>true</bool></property><property name="autoExclusive"><bool>true</bool></property><property name="icon"><iconset resource="../Assets/Resources.qrc"><normaloff>:/icons/split-vertical.svg</normaloff></iconset></property></widget></item>
+     <item><widget class="QToolButton" name="AddToolBtn"><property name="toolTip"><string>Add tool</string></property><property name="icon"><iconset resource="../Assets/Resources.qrc"><normaloff>:/icons/add.svg</normaloff></iconset></property></widget></item>
      <item><spacer name="ToolbarSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
     </layout>
    </item>

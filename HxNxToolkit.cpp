@@ -2,6 +2,7 @@
 
 #include "App/SettingsWindow.h"
 #include "UI/Tab.h"
+#include "UI/AddToolDialog.h"
 #include "UI/ComponentFactory.h"
 #include "Util/Settings.h"
 #include "Util/Time.h"
@@ -25,7 +26,6 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 	: QMainWindow(parent)
 {
 	ui.setupUi(this);
-	ComponentFactory::Register(this);
 	CreateDefaultSettings();
 	auto defaultTab = NewTab();
 
@@ -100,6 +100,14 @@ Tab* HxNxToolkit::NewTab()
 	curTabIdx = ui.Tabs->addTab(tab, title);
 	ui.Tabs->setCurrentWidget(tab);
 	connect(tab, &Tab::LoadComponent, this, &HxNxToolkit::LoadComponent);
+	connect(tab, &Tab::AddToolRequested, this, [this, tab] {
+		AddToolDialog dialog(ComponentFactory::AvailableTools(), tab->IsVerticalSplit(), this);
+		connect(&dialog, &AddToolDialog::ToolSelected, this, [this, tab](ToolType toolType, bool verticalSplit) {
+			tab->SetVerticalSplit(verticalSplit);
+			ComponentFactory::CreateComponent(this, toolType);
+		});
+		dialog.exec();
+	});
 	connect(tab, &Tab::TabModified, this, &HxNxToolkit::OnTabModified);
 	connect(tab, &Tab::TabSaved, this, &HxNxToolkit::OnTabSaved);
 	return tab;
@@ -116,27 +124,6 @@ void HxNxToolkit::SaveCurrentTab()
 	if (tab && tab->IsModified()) {
 		SaveTab();
 	}
-}
-
-QAction* HxNxToolkit::AddComponentMenuAction(const QString& categoryName, const QString& componentName)
-{
-	auto menus = ui.MenuBar->findChildren<QMenu*>();
-	auto categoryIt = std::find_if(menus.begin(), menus.end(), [=](QMenu* menu) {
-		return menu->title() == categoryName;
-	});
-
-	QMenu* category{};
-	if (categoryIt == menus.end()) {
-		category = new QMenu(categoryName, ui.MenuBar);
-		category->setObjectName(categoryName);
-		ui.MenuBar->addMenu(category);
-	} else {
-		category = *categoryIt;
-	}
-
-	auto componentAction = new QAction(componentName, category);
-	category->addAction(componentAction);
-	return componentAction;
 }
 
 void HxNxToolkit::NewTabTriggered()
@@ -451,6 +438,7 @@ bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
 		case ToolType::RandomNumber:
 		case ToolType::RandomString:
 		case ToolType::FileSearch:
+		case ToolType::SymlinkMover:
 		case ToolType::RamMonitor:
 		case ToolType::ClipboardManager:
 		case ToolType::SystemShortcuts:

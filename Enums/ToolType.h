@@ -28,7 +28,7 @@ enum class ToolType
 
 	// Filesystem
 	FileSearch = 9,
-	SymlinkMover = 13,
+	SymlinkMover = 19,
 
 	// System
 	RamMonitor = 11,

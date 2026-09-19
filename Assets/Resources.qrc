@@ -15,6 +15,19 @@
         <file>tool-close.svg</file>
         <file>split-horizontal.svg</file>
         <file>split-vertical.svg</file>
+        <file>add.svg</file>
+        <file>calculator.svg</file>
+        <file>text.svg</file>
+        <file>checklist.svg</file>
+        <file>gitlab.svg</file>
+        <file>random.svg</file>
+        <file>folder-search.svg</file>
+        <file>link.svg</file>
+        <file>memory.svg</file>
+        <file>clipboard.svg</file>
+        <file>keyboard.svg</file>
+        <file>chevron-down.svg</file>
+        <file>chevron-right.svg</file>
     </qresource>
     <qresource prefix="/themes">
         <file alias="qlementine-dark.json">themes/qlementine-dark.json</file>

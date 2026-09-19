@@ -5,6 +5,7 @@
 #include "HxNxToolkit.h"
 
 #include <QString>
+#include <QList>
 
 #include <map>
 #include <functional>
@@ -27,10 +28,17 @@ struct ComponentSupplierEntry
 	}
 };
 
+struct ToolInfo
+{
+	ToolType Type;
+	QString CategoryName;
+	QString ToolName;
+};
+
 class ComponentFactory
 {
 public:
-	static void Register(HxNxToolkit* toolkit);
+	static QList<ToolInfo> AvailableTools();
 	static Component* CreateComponent(HxNxToolkit* toolkit, ToolType toolType);
 
 private:

@@ -3,7 +3,6 @@
 
 #include <QVBoxLayout>
 #include <QJsonArray>
-#include <QButtonGroup>
 
 Tab::Tab(QWidget* parent)
 	: QWidget(parent)
@@ -11,10 +10,7 @@ Tab::Tab(QWidget* parent)
 	ui.setupUi(this);
 	ui.RootLayout->setAlignment(ui.ToolbarLayout, Qt::AlignTop);
 
-	auto splitButtonGroup = new QButtonGroup(this);
-	splitButtonGroup->addButton(ui.HorizontalSplitBtn);
-	splitButtonGroup->addButton(ui.VerticalSplitBtn);
-	ui.VerticalSplitBtn->setChecked(true);
+	connect(ui.AddToolBtn, &QToolButton::clicked, this, &Tab::AddToolRequested);
 }
 
 Tab::~Tab()
@@ -43,7 +39,7 @@ void Tab::AddComponent(Component* component, const QString& title, bool fillCont
 	container->setFillContainer(fillContainer);
 	auto row = GetLastRow();
 
-	if (!row || ui.VerticalSplitBtn->isChecked()) {
+	if (!row || verticalSplit) {
 		row = new QWidget(this);
 		auto rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
@@ -156,6 +152,16 @@ void Tab::LoadState(const QJsonObject& state)
 bool Tab::IsModified()
 {
 	return modified;
+}
+
+bool Tab::IsVerticalSplit() const
+{
+	return verticalSplit;
+}
+
+void Tab::SetVerticalSplit(bool vertical)
+{
+	verticalSplit = vertical;
 }
 
 void Tab::Modify()

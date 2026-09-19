@@ -23,11 +23,14 @@ public:
 	void LoadState(const QJsonObject& state);
 
 	bool IsModified();
+	bool IsVerticalSplit() const;
+	void SetVerticalSplit(bool vertical);
 
 	// For external modifications only
 	void Modify();
 
 signals:
+	void AddToolRequested();
 	void LoadComponent(ToolType componentType, const QJsonObject& state);
 
 	void TabModified(Tab* tab);
@@ -46,4 +49,5 @@ private:
 
 	QString savePath;
 	bool modified{};
+	bool verticalSplit{ true };
 };

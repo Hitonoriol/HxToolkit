@@ -81,14 +81,13 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::SystemShortcuts, {"System", "System Shortcuts", DefaultSupplier<SystemShortcuts>(false)}}
 };
 
-void ComponentFactory::Register(HxNxToolkit* toolkit)
+QList<ToolInfo> ComponentFactory::AvailableTools()
 {
+	QList<ToolInfo> tools;
 	for (auto& [toolType, supplierEntry] : componentSuppliers) {
-		auto action = toolkit->AddComponentMenuAction(supplierEntry.CategoryName, supplierEntry.ToolName);
-		toolkit->connect(action, &QAction::triggered, toolkit, [=] {
-			supplierEntry.Supplier(toolkit);
-		});
+		tools.append({toolType, supplierEntry.CategoryName, supplierEntry.ToolName});
 	}
+	return tools;
 }
 
 Component* ComponentFactory::CreateComponent(HxNxToolkit* toolkit, ToolType toolType)

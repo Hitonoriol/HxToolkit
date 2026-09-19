@@ -24,8 +24,6 @@ public:
 	Tab* GetCurrentTab();
 	void SaveCurrentTab();
 
-	QAction* AddComponentMenuAction(const QString& categoryName, const QString& componentName);
-
 	using Tool = ToolType;
 	Q_ENUM(Tool)
 
