@@ -439,6 +439,7 @@ bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
 		case ToolType::RandomString:
 		case ToolType::FileSearch:
 		case ToolType::SymlinkMover:
+		case ToolType::Ping:
 		case ToolType::RamMonitor:
 		case ToolType::ClipboardManager:
 		case ToolType::SystemShortcuts:

@@ -191,6 +191,7 @@ QIcon AddToolDialog::ToolIcon(ToolType toolType) const
 	case ToolType::RandomString: return QIcon(":/icons/random.svg");
 	case ToolType::FileSearch: return QIcon(":/icons/folder-search.svg");
 	case ToolType::SymlinkMover: return QIcon(":/icons/link.svg");
+	case ToolType::Ping: return QIcon(":/icons/network.svg");
 	case ToolType::RamMonitor: return QIcon(":/icons/memory.svg");
 	case ToolType::ClipboardManager: return QIcon(":/icons/clipboard.svg");
 	case ToolType::SystemShortcuts: return QIcon(":/icons/keyboard.svg");

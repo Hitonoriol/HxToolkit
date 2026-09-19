@@ -30,6 +30,9 @@ enum class ToolType
 	FileSearch = 9,
 	SymlinkMover = 19,
 
+	// Network
+	Ping = 20,
+
 	// System
 	RamMonitor = 11,
 	ClipboardManager = 12,

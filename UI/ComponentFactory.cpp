@@ -25,6 +25,8 @@
 #include "System/ClipboardHistory.h"
 #include "System/SystemShortcuts.h"
 
+#include "Network/Ping.h"
+
 #include "UI/Tab.h"
 
 #include <QMessageBox>
@@ -76,6 +78,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::RandomString, {"Random", "Random string", DefaultSupplier<RandomString>(false)}},
 	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
+	{ToolType::Ping, {"Network", "Ping", DefaultSupplier<Ping>(false)}},
 	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>(false)}},
 	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}},
 	{ToolType::SystemShortcuts, {"System", "System Shortcuts", DefaultSupplier<SystemShortcuts>(false)}}

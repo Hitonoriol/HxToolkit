@@ -20,7 +20,7 @@ file(GLOB HXNXTOOLKIT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.ui
 )
 
-foreach(source_dir App Enums Filesystem General Gitlab JSON Productivity Random System Time UI Util)
+foreach(source_dir App Enums Filesystem General Gitlab JSON Network Productivity Random System Time UI Util)
     file(GLOB_RECURSE directory_sources CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/${source_dir}/*.h
@@ -92,6 +92,10 @@ target_link_libraries(HxNxToolkit PRIVATE
     Qt6::Widgets
     Qt6::Concurrent
 )
+
+if(WIN32)
+    target_link_libraries(HxNxToolkit PRIVATE icmp)
+endif()
 
 set_target_properties(HxNxToolkit PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${HXNXTOOLKIT_OUTPUT_DIR}/$<CONFIG>

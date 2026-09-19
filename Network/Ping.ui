@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PingClass</class>
+ <widget class="QWidget" name="PingClass">
+  <layout class="QVBoxLayout" name="RootLayout">
+   <item>
+    <layout class="QFormLayout" name="SettingsLayout">
+     <item row="0" column="0"><widget class="QLabel" name="HostLabel"><property name="text"><string>Host or URL:</string></property></widget></item>
+     <item row="0" column="1"><widget class="QLineEdit" name="HostField"><property name="placeholderText"><string>example.com or https://example.com</string></property></widget></item>
+     <item row="1" column="0"><widget class="QLabel" name="IntervalLabel"><property name="text"><string>Ping interval:</string></property></widget></item>
+     <item row="1" column="1"><widget class="QSpinBox" name="IntervalBox"><property name="minimum"><number>1</number></property><property name="maximum"><number>3600</number></property><property name="value"><number>1</number></property><property name="suffix"><string> seconds</string></property></widget></item>
+    </layout>
+   </item>
+   <item><widget class="QLabel" name="StatusLabel"><property name="text"><string>Status: Waiting…</string></property></widget></item>
+   <item><widget class="QLabel" name="PacketLossLabel"><property name="text"><string>Packet loss (last 10 seconds): —</string></property></widget></item>
+   <item>
+    <layout class="QHBoxLayout" name="AvailabilityHeaderLayout">
+     <item><widget class="QLabel" name="AvailabilityLabel"><property name="text"><string>Availability</string></property></widget></item>
+     <item><spacer name="AvailabilitySpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
+     <item>
+      <widget class="QComboBox" name="AvailabilityWindowBox">
+       <item><property name="text"><string>1 minute</string></property></item>
+       <item><property name="text"><string>5 minutes</string></property></item>
+       <item><property name="text"><string>10 minutes</string></property></item>
+       <item><property name="text"><string>30 minutes</string></property></item>
+       <item><property name="text"><string>60 minutes</string></property></item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item><widget class="AvailabilityChart" name="AvailabilityChartWidget"/></item>
+   <item><spacer name="VerticalSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AvailabilityChart</class>
+   <extends>QWidget</extends>
+   <header>Network/AvailabilityChart.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
