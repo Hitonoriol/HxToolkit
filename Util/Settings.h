@@ -8,7 +8,7 @@
 enum class Option
 {
 	LastSaveDir,
-	LastSavedTabPath,
+	LastSavedWorkspacePath,
 	AlwaysOnTop,
 	AutosaveInterval,
 	HideWhenMinimized,

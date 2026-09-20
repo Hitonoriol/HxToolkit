@@ -22,7 +22,7 @@ public:
 
 	Tab* NewTab();
 	Tab* GetCurrentTab();
-	void SaveCurrentTab();
+	void SaveCurrentWorkspace();
 
 	using Tool = ToolType;
 	Q_ENUM(Tool)
@@ -39,8 +39,9 @@ public slots:
 
 	void Autosave();
 
-	void SaveTabTriggered();
-	void LoadTabTriggered();
+	void NewWorkspaceTriggered();
+	void SaveWorkspaceTriggered();
+	void LoadWorkspaceTriggered();
 	void CloseTabTriggered();
 
 	void LoadComponent(ToolType componentType, const QJsonObject& state);
@@ -55,14 +56,17 @@ private slots:
 private:
 	void CreateDefaultSettings();
 
-	bool SaveTab(int idx);
-	bool SaveTab();
-	void LoadTab();
-	bool LoadTab(Tab* tab, const QString& tabPath);
-	void ShowTabLoadError(const QString& errorMessage);
+	bool SaveWorkspace();
+	bool SaveWorkspaceToPath(const QString& workspacePath);
+	void LoadWorkspace();
+	bool LoadWorkspaceFromPath(const QString& workspacePath);
+	bool ConfirmWorkspaceReplacement();
+	bool IsSupportedTool(ToolType toolType) const;
+	bool HasModifiedTabs() const;
+	void ClearTabs();
+	void UpdateWindowTitle();
 
 	void SetTabTitle(int tabIdx, const QString& newTitle);
-	QString GetTabTitle(int tabIdx);
 
 	void Quit();
 
@@ -72,5 +76,8 @@ private:
 	QMenu* trayMenu;
 
 	QTimer autosaveTimer;
-	int curTabIdx{};
+	QString workspacePath;
+	QString workspaceName{"Untitled Workspace"};
+	bool workspaceModified{};
+	bool quitting{};
 };

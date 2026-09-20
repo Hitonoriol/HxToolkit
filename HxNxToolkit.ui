@@ -64,11 +64,12 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="ActionNewWorkspace"/>
     <addaction name="ActionNewTab"/>
     <addaction name="ActionCloseTab"/>
     <addaction name="separator"/>
-    <addaction name="ActionSaveTab"/>
-    <addaction name="ActionLoadTab"/>
+    <addaction name="ActionSaveWorkspace"/>
+    <addaction name="ActionLoadWorkspace"/>
     <addaction name="separator"/>
     <addaction name="ActionSettings"/>
     <addaction name="ActionAlwaysOnTop"/>
@@ -121,17 +122,17 @@
     <string>Task tracker</string>
    </property>
   </action>
-  <action name="ActionLoadTab">
+  <action name="ActionLoadWorkspace">
    <property name="text">
-    <string>Load tab</string>
+    <string>Load workspace</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="ActionSaveTab">
+  <action name="ActionSaveWorkspace">
    <property name="text">
-    <string>Save tab</string>
+    <string>Save workspace</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -176,6 +177,10 @@
     <string>Settings</string>
    </property>
   </action>
+  <action name="ActionNewWorkspace">
+   <property name="text"><string>New workspace</string></property>
+   <property name="shortcut"><string>Ctrl+Shift+N</string></property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
@@ -197,10 +202,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>ActionSaveTab</sender>
+   <sender>ActionSaveWorkspace</sender>
    <signal>triggered()</signal>
    <receiver>HxNxToolkitClass</receiver>
-   <slot>SaveTabTriggered()</slot>
+   <slot>SaveWorkspaceTriggered()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -213,10 +218,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>ActionLoadTab</sender>
+   <sender>ActionLoadWorkspace</sender>
    <signal>triggered()</signal>
    <receiver>HxNxToolkitClass</receiver>
-   <slot>LoadTabTriggered()</slot>
+   <slot>LoadWorkspaceTriggered()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -227,6 +232,13 @@
      <y>199</y>
     </hint>
    </hints>
+  </connection>
+  <connection>
+   <sender>ActionNewWorkspace</sender>
+   <signal>triggered()</signal>
+   <receiver>HxNxToolkitClass</receiver>
+   <slot>NewWorkspaceTriggered()</slot>
+   <hints><hint type="sourcelabel"><x>-1</x><y>-1</y></hint><hint type="destinationlabel"><x>299</x><y>199</y></hint></hints>
   </connection>
   <connection>
    <sender>Tabs</sender>
@@ -295,8 +307,9 @@
  </connections>
  <slots>
   <slot>NewTabTriggered()</slot>
-  <slot>SaveTabTriggered()</slot>
-  <slot>LoadTabTriggered()</slot>
+  <slot>NewWorkspaceTriggered()</slot>
+  <slot>SaveWorkspaceTriggered()</slot>
+  <slot>LoadWorkspaceTriggered()</slot>
   <slot>OnTabClose(int)</slot>
   <slot>CloseTabTriggered()</slot>
   <slot>AlwaysOnTopToggled(bool)</slot>

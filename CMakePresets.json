@@ -92,26 +92,22 @@
         {
             "name": "x64-windows-clang-release",
             "configurePreset": "x64-windows-clang-release",
-            "configuration": "x64-windows-clang-release",
-            "jobs": 12
+            "configuration": "x64-windows-clang-release"
         },
         {
             "name": "x64-windows-clang-debug",
             "configurePreset": "x64-windows-clang-debug",
-            "configuration": "x64-windows-clang-debug",
-            "jobs": 12
+            "configuration": "x64-windows-clang-debug"
         },
         {
             "name": "x64-windows-mingw-local-qt-release-base",
             "hidden": true,
-            "configurePreset": "x64-windows-mingw-local-qt-release-base",
-            "jobs": 12
+            "configurePreset": "x64-windows-mingw-local-qt-release-base"
         },
         {
             "name": "x64-windows-mingw-local-qt-debug-base",
             "hidden": true,
-            "configurePreset": "x64-windows-mingw-local-qt-debug-base",
-            "jobs": 12
+            "configurePreset": "x64-windows-mingw-local-qt-debug-base"
         }
     ]
 }

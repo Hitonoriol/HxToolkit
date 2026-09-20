@@ -138,7 +138,7 @@ void GitlabTasks::OnElapsedTimeAdded()
 {
 	auto toolkit = dynamic_cast<HxNxToolkit*>(window());
 	if (toolkit) {
-		toolkit->SaveCurrentTab();
+		toolkit->SaveCurrentWorkspace();
 	}
 }
 

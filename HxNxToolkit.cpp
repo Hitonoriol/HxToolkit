@@ -21,13 +21,17 @@
 #include <QCloseEvent>
 #include <QTabBar>
 #include <QInputDialog>
+#include <QFileInfo>
+
+#include <algorithm>
 
 HxNxToolkit::HxNxToolkit(QWidget *parent)
 	: QMainWindow(parent)
 {
 	ui.setupUi(this);
 	CreateDefaultSettings();
-	auto defaultTab = NewTab();
+	NewTab();
+	UpdateWindowTitle();
 
 	connect(&autosaveTimer, &QTimer::timeout, this, &HxNxToolkit::Autosave);
 	autosaveTimer.start(std::chrono::milliseconds{Settings::GetInt(Option::AutosaveInterval) * 1'000});
@@ -53,11 +57,10 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 	auto launchArgs = QApplication::arguments();
 
 	if (launchArgs.size() > 1) {
-		LoadTab(defaultTab, launchArgs[1]);
+		LoadWorkspaceFromPath(launchArgs[1]);
 	}
 	else if (Settings::GetBool(Option::RestorePreviousSession)) {
-		auto path = Settings::GetString(Option::LastSavedTabPath);
-		LoadTab(defaultTab, path);
+		LoadWorkspaceFromPath(Settings::GetString(Option::LastSavedWorkspacePath));
 	}
 
 	if (Settings::GetBool(Option::WindowMaximized)) {
@@ -97,7 +100,7 @@ Tab* HxNxToolkit::NewTab()
 {
 	auto tab = new Tab;
 	auto title = Time::GetTimeString(QDateTime::currentDateTime());
-	curTabIdx = ui.Tabs->addTab(tab, title);
+	ui.Tabs->addTab(tab, title);
 	ui.Tabs->setCurrentWidget(tab);
 	connect(tab, &Tab::LoadComponent, this, &HxNxToolkit::LoadComponent);
 	connect(tab, &Tab::AddToolRequested, this, [this, tab] {
@@ -118,17 +121,18 @@ Tab* HxNxToolkit::GetCurrentTab()
 	return dynamic_cast<Tab*>(ui.Tabs->currentWidget());
 }
 
-void HxNxToolkit::SaveCurrentTab()
+void HxNxToolkit::SaveCurrentWorkspace()
 {
-	auto tab = GetCurrentTab();
-	if (tab && tab->IsModified()) {
-		SaveTab();
+	if (workspaceModified) {
+		SaveWorkspace();
 	}
 }
 
 void HxNxToolkit::NewTabTriggered()
 {
 	NewTab();
+	workspaceModified = true;
+	UpdateWindowTitle();
 }
 
 void HxNxToolkit::closeEvent(QCloseEvent* event)
@@ -139,6 +143,10 @@ void HxNxToolkit::closeEvent(QCloseEvent* event)
 
 	if (Settings::GetBool(Option::HideWhenClosed) && trayIcon->isVisible()) {
 		hide();
+		event->ignore();
+		return;
+	}
+	if (!quitting && !ConfirmWorkspaceReplacement()) {
 		event->ignore();
 	}
 }
@@ -158,71 +166,62 @@ void HxNxToolkit::changeEvent(QEvent* event)
 
 void HxNxToolkit::OnTabClose(int idx)
 {
-	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(idx));
-	if (tab && tab->IsModified()) {
-		auto result = QMessageBox::question(
-			this, "Closing \"" + ui.Tabs->tabText(idx) + "\"",
-			"This tab has unsaved changes. Save now?",
-			QMessageBox::StandardButton::Yes | QMessageBox::StandardButton::No | QMessageBox::StandardButton::Cancel
-		);
-
-		switch (result) {
-		case QMessageBox::StandardButton::Cancel:
-			return;
-
-		case QMessageBox::StandardButton::Yes:
-			if (!SaveTab(idx)) {
-				return;
-			}
-			break;
-
-		default:
-			break;
-		} 
-	}
-
 	ui.Tabs->removeTab(idx);
+	workspaceModified = true;
+	UpdateWindowTitle();
 }
 
 void HxNxToolkit::OnTabModified(Tab* tab)
 {
-	auto idx = ui.Tabs->indexOf(tab);
-	if (!tab->IsModified()) {
-		ui.Tabs->setTabText(idx, ui.Tabs->tabText(idx) + "*");
+	const auto index = ui.Tabs->indexOf(tab);
+	if (index >= 0 && !tab->IsModified() && !ui.Tabs->tabText(index).endsWith('*')) {
+		ui.Tabs->setTabText(index, ui.Tabs->tabText(index) + "*");
 	}
+	workspaceModified = true;
+	UpdateWindowTitle();
 }
 
 void HxNxToolkit::OnTabSaved(Tab* tab)
 {
-	auto idx = ui.Tabs->indexOf(tab);
-	if (tab->IsModified()) {
-		ui.Tabs->setTabText(idx, ui.Tabs->tabText(idx).removeLast());
+	const auto index = ui.Tabs->indexOf(tab);
+	if (index >= 0 && tab->IsModified() && ui.Tabs->tabText(index).endsWith('*')) {
+		ui.Tabs->setTabText(index, ui.Tabs->tabText(index).chopped(1));
 	}
 }
 
 void HxNxToolkit::Autosave()
 {
-	for (size_t i = 0; i < ui.Tabs->count(); ++i) {
-		auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(i));
-		if (!tab->GetSavePath().isEmpty() && tab->IsModified()) {
-			SaveTab(i);
-		}
+	if (!workspacePath.isEmpty() && workspaceModified) {
+		SaveWorkspaceToPath(workspacePath);
 	}
 }
 
-void HxNxToolkit::SaveTabTriggered()
+void HxNxToolkit::NewWorkspaceTriggered()
 {
-	SaveTab();
+	if (!ConfirmWorkspaceReplacement()) {
+		return;
+	}
+	ClearTabs();
+	workspacePath.clear();
+	workspaceName = "Untitled Workspace";
+	NewTab();
+	workspaceModified = false;
+	UpdateWindowTitle();
 }
 
-void HxNxToolkit::LoadTabTriggered()
+void HxNxToolkit::SaveWorkspaceTriggered()
 {
-	LoadTab();
+	SaveWorkspace();
+}
+
+void HxNxToolkit::LoadWorkspaceTriggered()
+{
+	LoadWorkspace();
 }
 
 void HxNxToolkit::CloseTabTriggered()
 {
-	ui.Tabs->removeTab(ui.Tabs->currentIndex());
+	OnTabClose(ui.Tabs->currentIndex());
 }
 
 void HxNxToolkit::AlwaysOnTopToggled(bool onTop)
@@ -297,177 +296,136 @@ void HxNxToolkit::CreateDefaultSettings()
 	Settings::Set(Option::LastSaveDir, savePath);
 }
 
-bool HxNxToolkit::SaveTab(int idx)
+bool HxNxToolkit::SaveWorkspace()
 {
-	if (idx == -1) {
-		return false;
-	}
-
-	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(idx));
-	auto title = GetTabTitle(idx);
-	
-	QFile saveFile;
-	auto savePath = tab->GetSavePath();
-	
-	if (savePath.isEmpty()) {
-		auto suggestedName = title;
-		suggestedName.replace(QRegularExpression("[^a-zA-Z0-9\\s]"), "-");
-		suggestedName.replace("--", "-");
-
+	if (workspacePath.isEmpty()) {
 		QFileDialog dialog(this);
-		dialog.setDirectory({Settings::GetString(Option::LastSaveDir)});
-		dialog.selectFile(suggestedName);
-		dialog.setFileMode(QFileDialog::AnyFile);
-		dialog.setNameFilter("HxNx Tab File (*.hxnx-tab)");
+		dialog.setDirectory(Settings::GetString(Option::LastSaveDir));
+		dialog.selectFile(workspaceName);
+		dialog.setDefaultSuffix("hxnx-workspace");
+		dialog.setNameFilter("HxNx Workspace File (*.hxnx-workspace)");
 		dialog.setAcceptMode(QFileDialog::AcceptSave);
-
-		auto result = dialog.exec();
-		auto files = dialog.selectedFiles();
-
-		auto newPath = files.isEmpty() ? QString("") : files.first();
-		if (!result || newPath.isEmpty()) {
+		if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty()) {
 			return false;
 		}
-
-		savePath = newPath;
-		saveFile.setFileName(newPath);
-		tab->SetSavePath(newPath);
-
-		auto tabName = std::filesystem::path(newPath.toStdWString()).filename().replace_extension().wstring();
-		title = QString::fromStdWString(tabName);
-	} else {
-		saveFile.setFileName(savePath);
+		workspacePath = dialog.selectedFiles().first();
+		workspaceName = QFileInfo(workspacePath).completeBaseName();
 	}
+	return SaveWorkspaceToPath(workspacePath);
+}
 
-	if (!saveFile.open(QFile::WriteOnly)) {
-		tab->SetSavePath("");
+bool HxNxToolkit::SaveWorkspaceToPath(const QString& savePath)
+{
+	QJsonObject workspace;
+	workspace["Name"] = workspaceName;
+	workspace["ActiveTab"] = ui.Tabs->currentIndex();
+	QJsonArray tabs;
+	for (int index = 0; index < ui.Tabs->count(); ++index) {
+		auto* tab = dynamic_cast<Tab*>(ui.Tabs->widget(index));
+		if (!tab) {
+			continue;
+		}
+		auto tabState = tab->SaveState();
+		tabState["Title"] = ui.Tabs->tabText(index);
+		tabs.append(tabState);
+	}
+	workspace["Tabs"] = tabs;
+
+	QFile saveFile(savePath);
+	if (!saveFile.open(QFile::WriteOnly | QFile::Truncate)) {
+		QMessageBox::critical(this, "Unable to save workspace", "The workspace file could not be opened for writing.");
 		return false;
 	}
-
-	SetTabTitle(idx, title);
-
-	auto tabJson = tab->SaveState();
-	tabJson["Title"] = title;
-
-	ui.Tabs->setTabText(idx, title);
-
-	saveFile.write(QJsonDocument(tabJson).toJson());
+	saveFile.write(QJsonDocument(workspace).toJson());
+	workspacePath = savePath;
+	workspaceModified = false;
 	Settings::Set(Option::LastSaveDir, QFileInfo(savePath).absolutePath());
-	Settings::Set(Option::LastSavedTabPath, savePath);
-	saveFile.close();
+	Settings::Set(Option::LastSavedWorkspacePath, savePath);
+	UpdateWindowTitle();
 	return true;
 }
 
-bool HxNxToolkit::SaveTab()
+void HxNxToolkit::LoadWorkspace()
 {
-	auto currentTab = ui.Tabs->currentIndex();
-	return SaveTab(currentTab);
-}
-
-void HxNxToolkit::LoadTab()
-{
-	QFileDialog dialog(this);
-	dialog.setDirectory({Settings::GetString(Option::LastSaveDir)});
-	dialog.setFileMode(QFileDialog::ExistingFile);
-	dialog.setNameFilter("HxNx Tab File (*.hxnx-tab)");
-	dialog.setAcceptMode(QFileDialog::AcceptOpen);
-	
-	auto result = dialog.exec();
-	auto files = dialog.selectedFiles();
-
-	auto tabPath = files.isEmpty() ? QString("") : files.first();
-	if (!result || tabPath.isEmpty()) {
+	if (!ConfirmWorkspaceReplacement()) {
 		return;
 	}
-
-	auto tab = NewTab();
-	if (!LoadTab(tab, tabPath)) {
-		ui.Tabs->removeTab(ui.Tabs->indexOf(tab));
-		tab->deleteLater();
+	QFileDialog dialog(this);
+	dialog.setDirectory(Settings::GetString(Option::LastSaveDir));
+	dialog.setFileMode(QFileDialog::ExistingFile);
+	dialog.setNameFilter("HxNx Workspace File (*.hxnx-workspace)");
+	dialog.setAcceptMode(QFileDialog::AcceptOpen);
+	if (dialog.exec() == QDialog::Accepted && !dialog.selectedFiles().isEmpty()) {
+		LoadWorkspaceFromPath(dialog.selectedFiles().first());
 	}
 }
 
-bool HxNxToolkit::LoadTab(Tab* tab, const QString& tabPath)
+bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 {
-	QFile tabFile(tabPath);
-	if (!tabFile.open(QFile::ReadOnly)) {
-		ShowTabLoadError("The file could not be opened.");
+	if (loadPath.isEmpty()) {
 		return false;
 	}
-
+	QFile workspaceFile(loadPath);
+	if (!workspaceFile.open(QFile::ReadOnly)) {
+		QMessageBox::critical(this, "Unable to load workspace", "The workspace file could not be opened.");
+		return false;
+	}
 	QJsonParseError parseError;
-	auto tabDoc = QJsonDocument::fromJson(tabFile.readAll(), &parseError);
-	if (parseError.error != QJsonParseError::NoError || !tabDoc.isObject()) {
-		ShowTabLoadError("The file does not contain a valid tab document.");
+	auto document = QJsonDocument::fromJson(workspaceFile.readAll(), &parseError);
+	if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+		QMessageBox::critical(this, "Unable to load workspace", "The file does not contain a valid workspace document.");
 		return false;
 	}
 
-	auto tabObject = tabDoc.object();
-	if (!tabObject["Title"].isString() || !tabObject["Components"].isArray()) {
-		ShowTabLoadError("The tab document is missing required data.");
+	auto workspace = document.object();
+	if (!workspace["Name"].isString() || !workspace["Tabs"].isArray()) {
+		QMessageBox::critical(this, "Unable to load workspace", "The workspace document is missing required data.");
 		return false;
 	}
-
-	auto components = tabObject["Components"].toArray();
-	if (components.size() > 50) {
-		ShowTabLoadError("The tab document contains too many components.");
+	auto tabStates = workspace["Tabs"].toArray();
+	if (tabStates.size() > 50) {
+		QMessageBox::critical(this, "Unable to load workspace", "The workspace contains too many tabs.");
 		return false;
 	}
-
-	for (auto componentValue : components) {
-		auto componentObject = componentValue.toObject();
-		if (componentObject.isEmpty() || !componentObject["Type"].isDouble() || !componentObject["Container"].isObject()) {
-			ShowTabLoadError("The tab document has invalid component data.");
+	for (const auto& tabValue : tabStates) {
+		auto tabState = tabValue.toObject();
+		if (tabState.isEmpty() || !tabState["Title"].isString() || !tabState["Components"].isArray()) {
+			QMessageBox::critical(this, "Unable to load workspace", "The workspace contains invalid tab data.");
 			return false;
 		}
-
-		auto componentType = static_cast<ToolType>(componentObject["Type"].toInt());
-		switch (componentType) {
-		case ToolType::BaseConverter:
-		case ToolType::Calculator:
-		case ToolType::ColorPicker:
-		case ToolType::MarkdownEditor:
-		case ToolType::Checklist:
-		case ToolType::TaskTracker:
-		case ToolType::GitlabTasks:
-		case ToolType::GitlabMergeRequests:
-		case ToolType::GitlabTimeStats:
-		case ToolType::Stopwatch:
-		case ToolType::Timer:
-		case ToolType::DateCountdown:
-		case ToolType::RandomNumber:
-		case ToolType::RandomString:
-		case ToolType::FileSearch:
-		case ToolType::SymlinkMover:
-		case ToolType::Ping:
-		case ToolType::RamMonitor:
-		case ToolType::ClipboardManager:
-		case ToolType::SystemShortcuts:
-			break;
-
-		default:
-			ShowTabLoadError("The tab document contains an unsupported component.");
-			return false;
+		for (const auto& componentValue : tabState["Components"].toArray()) {
+			auto component = componentValue.toObject();
+			if (component.isEmpty() || !component["Type"].isDouble() || !component["Container"].isObject()
+				|| !IsSupportedTool(static_cast<ToolType>(component["Type"].toInt()))) {
+				QMessageBox::critical(this, "Unable to load workspace", "The workspace contains an unsupported component.");
+				return false;
+			}
 		}
 	}
 
-	try {
-		tab->LoadState(tabObject);
+	ClearTabs();
+	for (const auto& tabValue : tabStates) {
+		auto* tab = NewTab();
+		auto tabState = tabValue.toObject();
+		ui.Tabs->setTabText(ui.Tabs->indexOf(tab), tabState["Title"].toString());
+		try {
+			tab->LoadState(tabState);
+		} catch (const std::exception&) {
+			QMessageBox::critical(this, "Unable to load workspace", "The workspace could not be loaded.");
+			return false;
+		}
 	}
-	catch (const std::exception&) {
-		ShowTabLoadError("The tab document could not be loaded.");
-		return false;
+	if (ui.Tabs->count() == 0) {
+		NewTab();
 	}
-
-	ui.Tabs->setTabText(ui.Tabs->currentIndex(), tabObject["Title"].toString());
-	tab->SetSavePath(tabPath);
-	Settings::Set(Option::LastSavedTabPath, tabPath);
+	ui.Tabs->setCurrentIndex(std::clamp(workspace["ActiveTab"].toInt(), 0, ui.Tabs->count() - 1));
+	workspacePath = loadPath;
+	workspaceName = workspace["Name"].toString();
+	workspaceModified = false;
+	Settings::Set(Option::LastSaveDir, QFileInfo(loadPath).absolutePath());
+	Settings::Set(Option::LastSavedWorkspacePath, loadPath);
+	UpdateWindowTitle();
 	return true;
-}
-
-void HxNxToolkit::ShowTabLoadError(const QString& errorMessage)
-{
-	QMessageBox::critical(this, "Unable to load tab", errorMessage);
 }
 
 void HxNxToolkit::SetTabTitle(int tabIdx, const QString& newTitle)
@@ -481,23 +439,63 @@ void HxNxToolkit::SetTabTitle(int tabIdx, const QString& newTitle)
 	tab->Modify();
 }
 
-QString HxNxToolkit::GetTabTitle(int tabIdx)
+bool HxNxToolkit::ConfirmWorkspaceReplacement()
 {
-	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(tabIdx));
-	auto title = ui.Tabs->tabText(tabIdx);
-
-	if (tab->IsModified()) {
-		title.removeLast();
+	if (!workspaceModified) {
+		return true;
 	}
-	
-	return title;
+	auto result = QMessageBox::question(this, "Unsaved workspace", "Save changes to the current workspace?",
+		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+	if (result == QMessageBox::Cancel) {
+		return false;
+	}
+	return result == QMessageBox::No || SaveWorkspace();
+}
+
+bool HxNxToolkit::IsSupportedTool(ToolType toolType) const
+{
+	switch (toolType) {
+	case ToolType::BaseConverter: case ToolType::Calculator: case ToolType::ColorPicker: case ToolType::MarkdownEditor:
+	case ToolType::Checklist: case ToolType::TaskTracker: case ToolType::GitlabTasks: case ToolType::GitlabMergeRequests:
+	case ToolType::GitlabTimeStats: case ToolType::Stopwatch: case ToolType::Timer: case ToolType::DateCountdown:
+	case ToolType::RandomNumber: case ToolType::RandomString: case ToolType::FileSearch: case ToolType::SymlinkMover:
+	case ToolType::Ping: case ToolType::RamMonitor: case ToolType::ClipboardManager: case ToolType::SystemShortcuts:
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool HxNxToolkit::HasModifiedTabs() const
+{
+	for (int index = 0; index < ui.Tabs->count(); ++index) {
+		auto* tab = dynamic_cast<Tab*>(ui.Tabs->widget(index));
+		if (tab && tab->IsModified()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void HxNxToolkit::ClearTabs()
+{
+	while (ui.Tabs->count() > 0) {
+		auto* tab = ui.Tabs->widget(0);
+		ui.Tabs->removeTab(0);
+		tab->deleteLater();
+	}
+}
+
+void HxNxToolkit::UpdateWindowTitle()
+{
+	setWindowTitle(QString("HxNxToolkit - %1%2").arg(workspaceName, HasModifiedTabs() ? " *" : ""));
 }
 
 void HxNxToolkit::Quit()
 {
-	for (size_t i = 0; i < ui.Tabs->count(); ++i) {
-		OnTabClose(i);
+	if (!ConfirmWorkspaceReplacement()) {
+		return;
 	}
-
+	quitting = true;
 	QApplication::quit();
 }
