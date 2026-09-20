@@ -24,6 +24,7 @@ SystemShortcutEntry::SystemShortcutEntry(QObject* parent)
 	actionBox = new QComboBox;
 	actionBox->addItem("Minimize All Windows", static_cast<int>(Action::MinimizeAllWindows));
 	actionBox->addItem("Run command", static_cast<int>(Action::RunCommand));
+	actionBox->addItem("Kill Current Window", static_cast<int>(Action::KillCurrentWindow));
 	connect(actionBox, &QComboBox::currentIndexChanged, this, &SystemShortcutEntry::ActionChanged);
 	commandField = new QLineEdit;
 	commandField->setPlaceholderText("Command");
@@ -145,6 +146,12 @@ void SystemShortcutEntry::Execute()
 #endif
 		return;
 	}
+	if (action == Action::KillCurrentWindow) {
+#ifdef Q_OS_WIN
+		KillCurrentWindow();
+#endif
+		return;
+	}
 
 	if (!commandField->text().isEmpty()) {
 		auto command = QProcess::splitCommand(commandField->text());
@@ -171,5 +178,27 @@ BOOL CALLBACK SystemShortcutEntry::MinimizeWindow(HWND window, LPARAM data)
 void SystemShortcutEntry::MinimizeAllWindows()
 {
 	EnumWindows(MinimizeWindow, 0);
+}
+
+void SystemShortcutEntry::KillCurrentWindow()
+{
+	auto window = GetForegroundWindow();
+	if (!window) {
+		return;
+	}
+
+	DWORD processId{};
+	GetWindowThreadProcessId(window, &processId);
+	if (!processId) {
+		return;
+	}
+
+	auto process = OpenProcess(PROCESS_TERMINATE, FALSE, processId);
+	if (!process) {
+		return;
+	}
+
+	TerminateProcess(process, 1);
+	CloseHandle(process);
 }
 #endif

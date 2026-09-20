@@ -21,7 +21,8 @@ public:
 	enum class Action
 	{
 		MinimizeAllWindows,
-		RunCommand
+		RunCommand,
+		KillCurrentWindow
 	};
 
 	explicit SystemShortcutEntry(QObject* parent = nullptr);
@@ -51,6 +52,7 @@ private:
 #ifdef Q_OS_WIN
 	static BOOL CALLBACK MinimizeWindow(HWND window, LPARAM data);
 	void MinimizeAllWindows();
+	void KillCurrentWindow();
 #endif
 
 	KeystrokeListener::Chord chord;
