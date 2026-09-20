@@ -27,6 +27,8 @@
 
 #include "Network/Ping.h"
 
+#include "Screensavers/MeltingScreen.h"
+
 #include "UI/Tab.h"
 
 #include <QMessageBox>
@@ -79,6 +81,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
 	{ToolType::Ping, {"Network", "Ping", DefaultSupplier<Ping>(false)}},
+	{ToolType::MeltingScreen, {"Screensavers", "Melting screen", DefaultSupplier<MeltingScreen>(false)}},
 	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>(false)}},
 	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}},
 	{ToolType::SystemShortcuts, {"System", "System Shortcuts", DefaultSupplier<SystemShortcuts>(false)}}

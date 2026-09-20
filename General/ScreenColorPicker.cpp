@@ -1,4 +1,5 @@
 #include "ScreenColorPicker.h"
+#include "General/ScreenCapture.h"
 
 #include <QApplication>
 #include <QCursor>
@@ -16,8 +17,8 @@ std::vector<ScreenColorPicker*> ScreenColorPicker::activePickers;
 void ScreenColorPicker::Pick(std::function<void(QColor)> callback)
 {
 	ScreenColorPicker::callback = std::move(callback);
-	for (auto screen : QGuiApplication::screens()) {
-		auto picker = new ScreenColorPicker(screen);
+	for (auto&& capture : ScreenCaptures::CaptureAll()) {
+		auto picker = new ScreenColorPicker(capture.geometry, std::move(capture.image));
 		activePickers.push_back(picker);
 		picker->show();
 		picker->raise();
@@ -27,11 +28,11 @@ void ScreenColorPicker::Pick(std::function<void(QColor)> callback)
 	activePickers.back()->grabKeyboard();
 }
 
-ScreenColorPicker::ScreenColorPicker(QScreen* screen)
+ScreenColorPicker::ScreenColorPicker(const QRect& geometry, QPixmap capturedScreenshot)
 	: QWidget(nullptr, Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint)
 {
-	setGeometry(screen->geometry());
-	screenshot = screen->grabWindow(0);
+	setGeometry(geometry);
+	screenshot = std::move(capturedScreenshot);
 	screenshotImage = screenshot.toImage();
 	cursorPosition = mapFromGlobal(QCursor::pos());
 	hasCursor = rect().contains(cursorPosition);

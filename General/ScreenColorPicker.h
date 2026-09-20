@@ -8,7 +8,6 @@
 #include <functional>
 #include <vector>
 
-class QScreen;
 class QPainter;
 
 class ScreenColorPicker : public QWidget
@@ -23,7 +22,7 @@ protected:
 	virtual void paintEvent(QPaintEvent* event) override;
 
 private:
-	ScreenColorPicker(QScreen* screen);
+	ScreenColorPicker(const QRect& geometry, QPixmap screenshot);
 
 	void DrawMagnifier(QPainter* painter);
 	void Finish(const QColor& color);

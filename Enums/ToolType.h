@@ -33,6 +33,9 @@ enum class ToolType
 	// Network
 	Ping = 20,
 
+	// Screensavers
+	MeltingScreen = 21,
+
 	// System
 	RamMonitor = 11,
 	ClipboardManager = 12,

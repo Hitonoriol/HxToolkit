@@ -459,7 +459,7 @@ bool HxNxToolkit::IsSupportedTool(ToolType toolType) const
 	case ToolType::Checklist: case ToolType::TaskTracker: case ToolType::GitlabTasks: case ToolType::GitlabMergeRequests:
 	case ToolType::GitlabTimeStats: case ToolType::Stopwatch: case ToolType::Timer: case ToolType::DateCountdown:
 	case ToolType::RandomNumber: case ToolType::RandomString: case ToolType::FileSearch: case ToolType::SymlinkMover:
-	case ToolType::Ping: case ToolType::RamMonitor: case ToolType::ClipboardManager: case ToolType::SystemShortcuts:
+	case ToolType::Ping: case ToolType::MeltingScreen: case ToolType::RamMonitor: case ToolType::ClipboardManager: case ToolType::SystemShortcuts:
 		return true;
 	default:
 		return false;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MeltingScreenClass</class>
+ <widget class="QWidget" name="MeltingScreenClass">
+  <layout class="QVBoxLayout" name="RootLayout">
+   <item><widget class="QPushButton" name="StartButton"><property name="text"><string>Start</string></property></widget></item>
+   <item>
+    <layout class="QHBoxLayout" name="IdleLayout">
+     <item><widget class="oclero::qlementine::Switch" name="IdleEnabledSwitch"><property name="text"><string>Start when idle</string></property></widget></item>
+     <item><spacer name="IdleSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
+     <item><widget class="QTimeEdit" name="IdleDelayEdit"><property name="displayFormat"><string>mm:ss</string></property></widget></item>
+    </layout>
+   </item>
+   <item><spacer name="BottomSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>oclero::qlementine::Switch</class>
+   <extends>QAbstractButton</extends>
+   <header location="global">oclero/qlementine/widgets/Switch.hpp</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection><sender>StartButton</sender><signal>clicked()</signal><receiver>MeltingScreenClass</receiver><slot>StartScreenSaver()</slot></connection>
+ </connections>
+ <slots><slot>StartScreenSaver()</slot></slots>
+</ui>

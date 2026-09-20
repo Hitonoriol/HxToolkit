@@ -29,6 +29,7 @@
         <file>chevron-down.svg</file>
         <file>chevron-right.svg</file>
         <file>network.svg</file>
+        <file>melting-screen.svg</file>
     </qresource>
     <qresource prefix="/themes">
         <file alias="qlementine-dark.json">themes/qlementine-dark.json</file>
