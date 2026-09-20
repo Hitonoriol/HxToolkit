@@ -395,8 +395,8 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 		}
 		for (const auto& componentValue : tabState["Components"].toArray()) {
 			auto component = componentValue.toObject();
-			if (component.isEmpty() || !component["Type"].isDouble() || !component["Container"].isObject()
-				|| !IsSupportedTool(static_cast<ToolType>(component["Type"].toInt()))) {
+			if (component.isEmpty() || !component["Type"].isString() || !component["Container"].isObject()
+				|| !ToolTypeFromName(component["Type"].toString())) {
 				QMessageBox::critical(this, "Unable to load workspace", "The workspace contains an unsupported component.");
 				return false;
 			}
@@ -450,20 +450,6 @@ bool HxNxToolkit::ConfirmWorkspaceReplacement()
 		return false;
 	}
 	return result == QMessageBox::No || SaveWorkspace();
-}
-
-bool HxNxToolkit::IsSupportedTool(ToolType toolType) const
-{
-	switch (toolType) {
-	case ToolType::BaseConverter: case ToolType::Calculator: case ToolType::ColorPicker: case ToolType::MarkdownEditor:
-	case ToolType::Checklist: case ToolType::TaskTracker: case ToolType::GitlabTasks: case ToolType::GitlabMergeRequests:
-	case ToolType::GitlabTimeStats: case ToolType::Stopwatch: case ToolType::Timer: case ToolType::DateCountdown:
-	case ToolType::RandomNumber: case ToolType::RandomString: case ToolType::FileSearch: case ToolType::SymlinkMover:
-	case ToolType::Ping: case ToolType::MeltingScreen: case ToolType::RamMonitor: case ToolType::ClipboardManager: case ToolType::SystemShortcuts:
-		return true;
-	default:
-		return false;
-	}
 }
 
 bool HxNxToolkit::HasModifiedTabs() const

@@ -141,8 +141,9 @@ void Tab::LoadState(const QJsonObject& state)
 	auto componentArr = state["Components"].toArray();
 	for (auto componentRef : componentArr) {
 		auto componentObj = componentRef.toObject();
-		auto componentType = static_cast<ToolType>(componentObj["Type"].toInt());
-		emit LoadComponent(componentType, componentObj);
+		if (const auto componentType = ToolTypeFromName(componentObj["Type"].toString())) {
+			emit LoadComponent(*componentType, componentObj);
+		}
 	}
 
 	emit TabSaved(this);

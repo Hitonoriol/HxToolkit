@@ -24,9 +24,6 @@ public:
 	Tab* GetCurrentTab();
 	void SaveCurrentWorkspace();
 
-	using Tool = ToolType;
-	Q_ENUM(Tool)
-
 protected:
 	virtual void closeEvent(QCloseEvent* event) override;
 	virtual void changeEvent(QEvent* event) override;
@@ -61,7 +58,6 @@ private:
 	void LoadWorkspace();
 	bool LoadWorkspaceFromPath(const QString& workspacePath);
 	bool ConfirmWorkspaceReplacement();
-	bool IsSupportedTool(ToolType toolType) const;
 	bool HasModifiedTabs() const;
 	void ClearTabs();
 	void UpdateWindowTitle();

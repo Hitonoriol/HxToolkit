@@ -19,7 +19,7 @@ ToolType Component::GetType()
 QJsonObject Component::SaveState()
 {
 	QJsonObject state;
-	state["Type"] = static_cast<int>(type);
+	state["Type"] = ToolTypeName(type);
 
 	if (container) {
 		state["Container"] = container->SaveState();

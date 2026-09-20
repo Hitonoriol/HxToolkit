@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>NetworkInterfacesClass</class>
+ <widget class="QWidget" name="NetworkInterfacesClass">
+  <layout class="QVBoxLayout" name="RootLayout">
+   <item><widget class="QGroupBox" name="PresetsGroup"><property name="title"><string>Interface presets</string></property><layout class="QHBoxLayout" name="PresetLayout">
+    <item><widget class="QComboBox" name="PresetBox"><property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Fixed"><horstretch>1</horstretch><verstretch>0</verstretch></sizepolicy></property><property name="placeholderText"><string>Choose a saved preset</string></property></widget></item>
+    <item><widget class="QPushButton" name="LoadPresetButton"><property name="text"><string>Load into selected</string></property></widget></item><item><widget class="QPushButton" name="DeletePresetButton"><property name="text"><string>Delete</string></property></widget></item>
+    <item><spacer name="PresetSpacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
+    <item><widget class="QLineEdit" name="PresetNameField"><property name="minimumSize"><size><width>180</width><height>0</height></size></property><property name="placeholderText"><string>New preset name</string></property></widget></item><item><widget class="QPushButton" name="SavePresetButton"><property name="text"><string>Save selected as preset</string></property></widget></item>
+   </layout></widget></item>
+   <item><layout class="QHBoxLayout" name="ContentLayout">
+    <item><widget class="QGroupBox" name="InterfacesGroup"><property name="title"><string>Interfaces</string></property><property name="minimumSize"><size><width>320</width><height>0</height></size></property><layout class="QVBoxLayout" name="InterfacesLayout">
+     <item><widget class="QTreeWidget" name="InterfacesTree"><property name="alternatingRowColors"><bool>true</bool></property><property name="verticalScrollBarPolicy"><enum>Qt::ScrollBarAsNeeded</enum></property><column><property name="text"><string>Interface</string></property></column><column><property name="text"><string>Status / value</string></property></column></widget></item>
+     <item><widget class="QPushButton" name="RefreshButton"><property name="text"><string>Refresh interfaces</string></property></widget></item>
+    </layout></widget></item>
+    <item><widget class="QGroupBox" name="SettingsGroup"><property name="title"><string>Interface details</string></property><layout class="QFormLayout" name="SettingsLayout">
+     <item row="0" column="0"><widget class="QLabel" name="SelectedLabel"><property name="text"><string>Selected interface:</string></property></widget></item><item row="0" column="1"><widget class="QLabel" name="SelectedInterfaceLabel"><property name="text"><string>Choose an interface on the left</string></property></widget></item>
+     <item row="1" column="0"><widget class="QLabel" name="EnabledLabel"><property name="text"><string>Interface:</string></property></widget></item><item row="1" column="1"><widget class="QCheckBox" name="EnabledBox"><property name="text"><string>Enabled</string></property></widget></item>
+     <item row="2" column="0"><widget class="QLabel" name="DhcpLabel"><property name="text"><string>IPv4 configuration:</string></property></widget></item><item row="2" column="1"><widget class="QCheckBox" name="DhcpBox"><property name="text"><string>Obtain an address automatically (DHCP)</string></property></widget></item>
+     <item row="3" column="0"><widget class="QLabel" name="AddressLabel"><property name="text"><string>IPv4 address:</string></property></widget></item><item row="3" column="1"><widget class="QLineEdit" name="AddressField"/></item>
+     <item row="4" column="0"><widget class="QLabel" name="SubnetLabel"><property name="text"><string>Subnet mask:</string></property></widget></item><item row="4" column="1"><widget class="QLineEdit" name="SubnetField"/></item>
+     <item row="5" column="0"><widget class="QLabel" name="GatewayLabel"><property name="text"><string>Gateway:</string></property></widget></item><item row="5" column="1"><widget class="QLineEdit" name="GatewayField"/></item>
+     <item row="6" column="0"><widget class="QLabel" name="DnsLabel"><property name="text"><string>DNS servers:</string></property></widget></item><item row="6" column="1"><widget class="QLineEdit" name="DnsField"><property name="placeholderText"><string>Comma-separated, e.g. 1.1.1.1, 8.8.8.8</string></property></widget></item>
+     <item row="7" column="1"><widget class="QPushButton" name="ApplyButton"><property name="text"><string>Apply IPv4 / DNS settings</string></property></widget></item><item row="8" column="1"><spacer name="DetailsSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property></spacer></item>
+    </layout></widget></item>
+   </layout></item>
+   <item><widget class="QLabel" name="StatusLabel"><property name="wordWrap"><bool>true</bool></property><property name="text"><string>Loading network interfaces…</string></property></widget></item>
+  </layout>
+ </widget>
+ <resources/><connections/>
+</ui>

@@ -94,7 +94,7 @@ target_link_libraries(HxNxToolkit PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(HxNxToolkit PRIVATE icmp)
+    target_link_libraries(HxNxToolkit PRIVATE icmp iphlpapi shell32 advapi32)
 endif()
 
 set_target_properties(HxNxToolkit PROPERTIES
@@ -103,6 +103,17 @@ set_target_properties(HxNxToolkit PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${HXNXTOOLKIT_OUTPUT_DIR}/$<CONFIG>
     FOLDER Apps
 )
+
+if(WIN32 AND TARGET Qt6::qmake)
+    get_target_property(QT_QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
+    if(EXISTS "${QT_BIN_DIR}/windeployqt.exe")
+        add_custom_command(TARGET HxNxToolkit POST_BUILD
+            COMMAND "${QT_BIN_DIR}/windeployqt.exe" --no-translations --no-compiler-runtime "$<TARGET_FILE:HxNxToolkit>"
+            COMMENT "Deploying Qt runtime beside HxNxToolkit"
+        )
+    endif()
+endif()
 
 if(MSVC)
     target_compile_options(HxNxToolkit PRIVATE /permissive- /sdl /W3 /EHsc)
