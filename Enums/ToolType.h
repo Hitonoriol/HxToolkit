@@ -20,7 +20,8 @@ public:
 		FileSearch = 9, SymlinkMover = 19,
 		Ping = 20, NetworkInterfaces = 22,
 		MeltingScreen = 21,
-		RamMonitor = 11, ClipboardManager = 12, SystemShortcuts = 16
+		RamMonitor = 11, ClipboardManager = 12, SystemShortcuts = 16,
+		FocusTracker = 23
 	};
 	Q_ENUM(Value)
 };

@@ -181,6 +181,7 @@ QIcon AddToolDialog::ToolIcon(ToolType toolType) const
 	case ToolType::MarkdownEditor: return QIcon(":/icons/text.svg");
 	case ToolType::Checklist:
 	case ToolType::TaskTracker: return QIcon(":/icons/checklist.svg");
+	case ToolType::FocusTracker: return QIcon(":/icons/clock.svg");
 	case ToolType::GitlabTasks:
 	case ToolType::GitlabMergeRequests:
 	case ToolType::GitlabTimeStats: return QIcon(":/icons/gitlab.svg");

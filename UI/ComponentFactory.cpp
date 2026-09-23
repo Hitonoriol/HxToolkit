@@ -10,6 +10,7 @@
 #include "Productivity/GitlabMergeRequests/GitlabMergeRequests.h"
 #include "Productivity/GitlabTimeStats/GitlabTimeStats.h"
 #include "Productivity/TaskTracker/TaskTracker.h"
+#include "Productivity/FocusTracker/FocusTracker.h"
 
 #include "Time/Stopwatch.h"
 #include "Time/Timer.h"
@@ -45,6 +46,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::GitlabMergeRequests, {"GitLab", "GitLab MRs", DefaultSupplier<GitlabMergeRequests>()}},
 	{ToolType::GitlabTimeStats, {"GitLab", "GitLab Time Stats", DefaultSupplier<GitlabTimeStats>()}},
 	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>(false)}},
+	{ToolType::FocusTracker, {"Productivity", "Focus Tracker", DefaultSupplier<FocusTracker>()}},
 
 	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>(false)}},
 	{ToolType::DateCountdown, {"Time", "Date Countdown", DefaultSupplier<DateCountdown>(false)}},
