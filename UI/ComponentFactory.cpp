@@ -20,6 +20,7 @@
 #include "Random/RandomString.h"
 
 #include "Filesystem/FileSearch.h"
+#include "Filesystem/LogExtractor.h"
 #include "Filesystem/SymlinkMover.h"
 
 #include "System/RamMonitor.h"
@@ -82,6 +83,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::RandomNumber, {"Random", "Random number", DefaultSupplier<RandomNumber>(false)}},
 	{ToolType::RandomString, {"Random", "Random string", DefaultSupplier<RandomString>(false)}},
 	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
+	{ToolType::LogExtractor, {"Filesystem", "Log Extractor", DefaultSupplier<LogExtractor>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
 	{ToolType::Ping, {"Network", "Ping", DefaultSupplier<Ping>(false)}},
 	{ToolType::NetworkInterfaces, {"Network", "Network interfaces", DefaultSupplier<NetworkInterfaces>()}},
