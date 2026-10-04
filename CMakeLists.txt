@@ -29,6 +29,10 @@ foreach(source_dir App Enums Filesystem General Gitlab JSON Network Productivity
     list(APPEND HXNXTOOLKIT_SOURCES ${directory_sources})
 endforeach()
 
+if(NOT WIN32)
+    list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/Network/(Webview|WebView2Widget)\\.(cpp|h)$")
+endif()
+
 add_library(tinyexpr STATIC
     3rdParty/tinyexpr/tinyexpr.c
     3rdParty/tinyexpr/tinyexpr.h
@@ -47,6 +51,31 @@ set_target_properties(tinyexpr PROPERTIES
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
 find_package(Git REQUIRED)
+
+if(WIN32)
+    find_package(unofficial-webview2 CONFIG QUIET)
+
+    if(NOT TARGET unofficial::webview2::webview2)
+        include(FetchContent)
+        FetchContent_Declare(webview2_sdk
+            URL "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.2277.86"
+            URL_HASH SHA512=83384c5232cc95007aca0a5557e1f42a0784fcf57360e65535b3e25421e0de39d6889ebe17f446a94e00123923da917f47fe932817c9d2cc3c3e1fff314476f5
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        )
+        FetchContent_MakeAvailable(webview2_sdk)
+
+        add_library(hxnx_webview2 SHARED IMPORTED)
+        set_target_properties(hxnx_webview2 PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${webview2_sdk_SOURCE_DIR}/build/native/include"
+            IMPORTED_IMPLIB "${webview2_sdk_SOURCE_DIR}/build/native/x64/WebView2Loader.dll.lib"
+            IMPORTED_LOCATION "${webview2_sdk_SOURCE_DIR}/build/native/x64/WebView2Loader.dll"
+        )
+        set(HXNXTOOLKIT_WEBVIEW2_TARGET hxnx_webview2)
+        set(HXNXTOOLKIT_WEBVIEW2_LOADER "${webview2_sdk_SOURCE_DIR}/build/native/x64/WebView2Loader.dll")
+    else()
+        set(HXNXTOOLKIT_WEBVIEW2_TARGET unofficial::webview2::webview2)
+    endif()
+endif()
 
 set(QLEMENTINE_COMBOBOX_PATCH "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/patches/qlementine-combobox-fix.patch")
 set(QLEMENTINE_COMBOBOX_FILTER "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp")
@@ -94,7 +123,23 @@ target_link_libraries(HxNxToolkit PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(HxNxToolkit PRIVATE icmp iphlpapi shell32 advapi32)
+    target_link_libraries(HxNxToolkit PRIVATE
+        ${HXNXTOOLKIT_WEBVIEW2_TARGET}
+        icmp
+        iphlpapi
+        shell32
+        advapi32
+        ole32
+    )
+
+    if(HXNXTOOLKIT_WEBVIEW2_LOADER)
+        add_custom_command(TARGET HxNxToolkit POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${HXNXTOOLKIT_WEBVIEW2_LOADER}"
+                "$<TARGET_FILE_DIR:HxNxToolkit>"
+            COMMENT "Deploying WebView2 loader beside HxNxToolkit"
+        )
+    endif()
 endif()
 
 set_target_properties(HxNxToolkit PROPERTIES

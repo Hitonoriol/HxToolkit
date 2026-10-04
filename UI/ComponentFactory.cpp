@@ -28,6 +28,9 @@
 
 #include "Network/Ping.h"
 #include "Network/NetworkInterfaces.h"
+#ifdef _WIN32
+#include "Network/Webview.h"
+#endif
 
 #include "Screensavers/MeltingScreen.h"
 
@@ -85,6 +88,9 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
 	{ToolType::Ping, {"Network", "Ping", DefaultSupplier<Ping>(false)}},
 	{ToolType::NetworkInterfaces, {"Network", "Network interfaces", DefaultSupplier<NetworkInterfaces>()}},
+#ifdef _WIN32
+	{ToolType::Webview, {"Network", "Webview", DefaultSupplier<Webview>()}},
+#endif
 	{ToolType::MeltingScreen, {"Screensavers", "Melting screen", DefaultSupplier<MeltingScreen>(false)}},
 	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>(false)}},
 	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}},

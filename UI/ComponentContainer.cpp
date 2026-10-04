@@ -1,4 +1,5 @@
 #include "ComponentContainer.h"
+#include "ToolConfigurationParameter.h"
 
 #include <QMenu>
 #include <QInputDialog>
@@ -15,12 +16,35 @@ ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 	ui.Content->layout()->addWidget(component);
 	ui.Title->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
 	ui.CloseBtn->setIcon(QIcon(":/icons/tool-close.svg"));
+	PopulateConfigurationMenu();
 	UpdateCollapseButton();
 	ui.Title->setMaximumHeight(ui.Title->sizeHint().height());
 
 	connect(ui.CloseBtn, &QToolButton::clicked, this, &ComponentContainer::CloseClicked);
 	connect(ui.CollapseBtn, &QToolButton::clicked, this, &ComponentContainer::OnCollapseClicked);
 	connect(ui.Title, &QWidget::customContextMenuRequested, this, &ComponentContainer::OnTitleContextMenuRequested);
+}
+
+void ComponentContainer::PopulateConfigurationMenu()
+{
+	const auto parameters = component->GetConfigurationParameters();
+	ui.ConfigurationBtn->setVisible(!parameters.isEmpty());
+
+	auto* menu = new QMenu(ui.ConfigurationBtn);
+	for (auto* parameter : parameters) {
+		if (!parameter) {
+			continue;
+		}
+
+		auto* action = menu->addAction(parameter->GetName());
+		connect(action, &QAction::triggered, parameter, [this, parameter] {
+			parameter->Edit(this);
+		});
+		connect(parameter, &ToolConfigurationParameter::Changed, component, [this] {
+			emit component->Modified(component);
+		});
+	}
+	ui.ConfigurationBtn->setMenu(menu);
 }
 
 ComponentContainer::~ComponentContainer()

@@ -35,6 +35,7 @@ private slots:
 
 private:
 	void UpdateCollapseButton();
+	void PopulateConfigurationMenu();
 
 	Ui::ComponentContainerClass ui;
 	QPointer<Component> component;
