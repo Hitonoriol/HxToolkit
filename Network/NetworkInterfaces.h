@@ -26,7 +26,6 @@ private slots:
 	void LoadPreset();
 	void DeletePreset();
 	void ApplySelectedInterface();
-	void SetSelectedInterfaceEnabled(bool enabled);
 
 private:
 	struct AdapterSettings {
@@ -51,6 +50,7 @@ private:
 	QJsonObject SettingsToJson(const AdapterSettings& settings) const;
 	AdapterSettings SettingsFromJson(const QJsonObject& value) const;
 	void UpdatePresetBox();
+	void UpdatePresetButtons();
 	void SetBusy(bool busy);
 	static QList<AdapterSettings> DiscoverAdapters();
 
