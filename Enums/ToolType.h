@@ -21,7 +21,8 @@ public:
 		Ping = 20, NetworkInterfaces = 22,
 		MeltingScreen = 21,
 		RamMonitor = 11, ClipboardManager = 12, SystemShortcuts = 16,
-		FocusTracker = 23
+		FocusTracker = 23,
+		Webview = 24
 	};
 	Q_ENUM(Value)
 };

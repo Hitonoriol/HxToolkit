@@ -4,8 +4,10 @@
 #include <QComboBox>
 #include <QFutureWatcher>
 #include <QHostAddress>
+#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QProcess>
 #include <QSignalBlocker>
@@ -23,6 +25,7 @@ namespace {
 constexpr auto NameRole = Qt::UserRole;
 constexpr auto SettingsRole = Qt::UserRole + 1;
 constexpr auto IdRole = Qt::UserRole + 2;
+constexpr auto NewPresetLabel = "New preset";
 
 QString FormatIpv4Address(const SOCKADDR* address)
 {
@@ -59,8 +62,8 @@ NetworkInterfaces::NetworkInterfaces(QWidget* parent)
 	connect(ui.SavePresetButton, &QPushButton::clicked, this, &NetworkInterfaces::SavePreset);
 	connect(ui.LoadPresetButton, &QPushButton::clicked, this, &NetworkInterfaces::LoadPreset);
 	connect(ui.DeletePresetButton, &QPushButton::clicked, this, &NetworkInterfaces::DeletePreset);
+	connect(ui.PresetBox, &QComboBox::currentIndexChanged, this, [this] { UpdatePresetButtons(); });
 	connect(ui.ApplyButton, &QPushButton::clicked, this, &NetworkInterfaces::ApplySelectedInterface);
-	connect(ui.EnabledBox, &QCheckBox::toggled, this, &NetworkInterfaces::SetSelectedInterfaceEnabled);
 	connect(&discoveryWatcher, &QFutureWatcher<QList<AdapterSettings>>::finished, this, [this] {
 		const auto selectedId = ui.InterfacesTree->currentItem()
 			? (ui.InterfacesTree->currentItem()->parent() ? ui.InterfacesTree->currentItem()->parent() : ui.InterfacesTree->currentItem())->data(0, IdRole).toString()
@@ -72,8 +75,8 @@ NetworkInterfaces::NetworkInterfaces(QWidget* parent)
 		}
 		const auto scrollPosition = ui.InterfacesTree->verticalScrollBar()->value();
 		QMap<QString, QTreeWidgetItem*> existing;
-		while (ui.InterfacesTree->topLevelItemCount() > 0) {
-			auto* item = ui.InterfacesTree->takeTopLevelItem(0);
+		for (int index = 0; index < ui.InterfacesTree->topLevelItemCount(); ++index) {
+			auto* item = ui.InterfacesTree->topLevelItem(index);
 			existing.insert(item->data(0, IdRole).toString(), item);
 		}
 
@@ -82,10 +85,12 @@ NetworkInterfaces::NetworkInterfaces(QWidget* parent)
 		QTreeWidgetItem* selectedItem = nullptr;
 		for (const auto& adapter : adapters) {
 			auto* item = existing.take(adapter.id);
-			if (!item) item = new QTreeWidgetItem;
+			if (!item) {
+				item = new QTreeWidgetItem;
+				ui.InterfacesTree->addTopLevelItem(item);
+			}
 			UpdateAdapter(item, adapter);
 			item->setExpanded(expandedIds.contains(adapter.id));
-			ui.InterfacesTree->addTopLevelItem(item);
 			if (adapter.id == selectedId) selectedItem = item;
 		}
 		qDeleteAll(existing);
@@ -96,11 +101,15 @@ NetworkInterfaces::NetworkInterfaces(QWidget* parent)
 		SetBusy(false);
 	});
 	connect(ui.InterfacesTree, &QTreeWidget::currentItemChanged, this, [this](QTreeWidgetItem* current, QTreeWidgetItem*) {
-		if (current && current->parent()) current = current->parent();
+		if (current && current->parent()) {
+			ui.InterfacesTree->setCurrentItem(current->parent());
+			return;
+		}
 		SelectAdapter(current);
 	});
 	connect(&refreshTimer, &QTimer::timeout, this, &NetworkInterfaces::RefreshInterfaces);
 	refreshTimer.start(std::chrono::seconds{5});
+	UpdatePresetBox();
 	SelectAdapter(nullptr);
 	RefreshInterfaces();
 }
@@ -126,8 +135,10 @@ void NetworkInterfaces::LoadState(const QJsonObject& state)
 void NetworkInterfaces::RefreshInterfaces()
 {
 	if (discoveryWatcher.isRunning()) return;
-	SetBusy(true);
-	ui.StatusLabel->setText("Retrieving network interfaces…");
+	if (sender() != &refreshTimer) {
+		SetBusy(true);
+		ui.StatusLabel->setText("Retrieving network interfaces…");
+	}
 	discoveryWatcher.setFuture(QtConcurrent::run(&NetworkInterfaces::DiscoverAdapters));
 }
 
@@ -196,8 +207,11 @@ void NetworkInterfaces::UpdateAdapter(QTreeWidgetItem* item, const AdapterSettin
 
 void NetworkInterfaces::SelectAdapter(QTreeWidgetItem* item)
 {
-	ui.SettingsGroup->setVisible(item);
-	if (!item) return;
+	ui.SettingsGroup->setEnabled(item != nullptr);
+	if (!item) {
+		ui.SelectedInterfaceLabel->setText("No interface selected");
+		return;
+	}
 	const auto settings = SettingsFromItem(item);
 	QSignalBlocker blocker(ui.EnabledBox);
 	ui.EnabledBox->setChecked(settings.enabled);
@@ -211,10 +225,21 @@ void NetworkInterfaces::SelectAdapter(QTreeWidgetItem* item)
 
 void NetworkInterfaces::SavePreset()
 {
-	const auto name = ui.PresetNameField->text().trimmed();
-	if (name.isEmpty() || !ui.InterfacesTree->currentItem()) { QMessageBox::information(this, "Save preset", "Select an interface and enter a preset name."); return; }
+	if (!ui.InterfacesTree->currentItem()) return;
+	QString name;
+	if (ui.PresetBox->currentIndex() == 0) {
+		bool accepted = false;
+		name = QInputDialog::getText(this, "Save preset", "Preset name:", QLineEdit::Normal, {}, &accepted).trimmed();
+		if (!accepted) return;
+		if (name.isEmpty()) { QMessageBox::information(this, "Save preset", "Enter a preset name."); return; }
+		if (name == NewPresetLabel) { QMessageBox::information(this, "Save preset", QString("\"%1\" is reserved. Choose another name.").arg(NewPresetLabel)); return; }
+	} else {
+		name = ui.PresetBox->currentText();
+	}
+	if (presets.contains(name)
+		&& QMessageBox::question(this, "Overwrite preset", QString("Overwrite \"%1\"?").arg(name), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) return;
 	auto settings = SettingsFromItem(ui.InterfacesTree->currentItem()->parent() ? ui.InterfacesTree->currentItem()->parent() : ui.InterfacesTree->currentItem());
-	settings.dhcp = ui.DhcpBox->isChecked(); settings.address = ui.AddressField->text().trimmed(); settings.gateway = ui.GatewayField->text().trimmed(); settings.subnet = ui.SubnetField->text().trimmed(); settings.dns = ui.DnsField->text().split(',', Qt::SkipEmptyParts);
+	settings.enabled = ui.EnabledBox->isChecked(); settings.dhcp = ui.DhcpBox->isChecked(); settings.address = ui.AddressField->text().trimmed(); settings.gateway = ui.GatewayField->text().trimmed(); settings.subnet = ui.SubnetField->text().trimmed(); settings.dns = ui.DnsField->text().split(',', Qt::SkipEmptyParts);
 	for (auto& dns : settings.dns) dns = dns.trimmed();
 	presets[name] = SettingsToJson(settings);
 	UpdatePresetBox(); ui.PresetBox->setCurrentText(name); emit Modified(this);
@@ -222,14 +247,15 @@ void NetworkInterfaces::SavePreset()
 
 void NetworkInterfaces::LoadPreset()
 {
-	if (!presets.contains(ui.PresetBox->currentText()) || SelectedAdapterName().isEmpty()) return;
+	if (ui.PresetBox->currentIndex() == 0 || !presets.contains(ui.PresetBox->currentText()) || SelectedAdapterName().isEmpty()) return;
 	const auto settings = SettingsFromJson(presets[ui.PresetBox->currentText()]);
-	ui.DhcpBox->setChecked(settings.dhcp); ui.AddressField->setText(settings.address); ui.GatewayField->setText(settings.gateway); ui.SubnetField->setText(settings.subnet); ui.DnsField->setText(settings.dns.join(", "));
+	ui.EnabledBox->setChecked(settings.enabled); ui.DhcpBox->setChecked(settings.dhcp); ui.AddressField->setText(settings.address); ui.GatewayField->setText(settings.gateway); ui.SubnetField->setText(settings.subnet); ui.DnsField->setText(settings.dns.join(", "));
 	ui.StatusLabel->setText("Preset loaded. Click Apply to change " + SelectedAdapterName() + ".");
 }
 
 void NetworkInterfaces::DeletePreset()
 {
+	if (ui.PresetBox->currentIndex() == 0) return;
 	if (presets.remove(ui.PresetBox->currentText())) { UpdatePresetBox(); emit Modified(this); }
 }
 
@@ -259,25 +285,12 @@ void NetworkInterfaces::ApplySelectedInterface()
 		if (!dns.isEmpty()) ok = RunNetsh({"interface", "ipv4", "set", "dnsservers", "name=" + adapter, "source=static", "address=" + dns[0].trimmed(), "validate=no"}, &error);
 		for (int i = 1; ok && i < dns.size(); ++i) ok = RunNetsh({"interface", "ipv4", "add", "dnsservers", "name=" + adapter, "address=" + dns[i].trimmed(), "index=" + QString::number(i + 1), "validate=no"}, &error);
 	}
+	const auto currentSettings = SettingsFromItem(ui.InterfacesTree->currentItem()->parent() ? ui.InterfacesTree->currentItem()->parent() : ui.InterfacesTree->currentItem());
+	if (ok && ui.EnabledBox->isChecked() != currentSettings.enabled) {
+		ok = RunNetsh({"interface", "set", "interface", "name=" + adapter, "admin=" + QString(ui.EnabledBox->isChecked() ? "enabled" : "disabled")}, &error);
+	}
 	ui.StatusLabel->setText(ok ? "Settings applied. Refreshing interfaces…" : "Could not apply settings: " + error);
 	if (ok) RefreshInterfaces();
-}
-
-void NetworkInterfaces::SetSelectedInterfaceEnabled(bool enabled)
-{
-	const auto adapter = SelectedAdapterName(); if (adapter.isEmpty()) return;
-	const auto elevation = WindowsPermissionService::requestElevation(enabled ? "Enabling this network interface" : "Disabling this network interface");
-	if (elevation == WindowsPermissionService::ElevationResult::ElevationRequested) {
-		return;
-	}
-	if (elevation == WindowsPermissionService::ElevationResult::Cancelled) return;
-	if (elevation == WindowsPermissionService::ElevationResult::Denied) {
-		ui.StatusLabel->setText("Administrator permission is required to change interface state.");
-		return;
-	}
-	QString error;
-	if (!RunNetsh({"interface", "set", "interface", "name=" + adapter, "admin=" + QString(enabled ? "enabled" : "disabled")}, &error)) ui.StatusLabel->setText("Could not change interface state: " + error);
-	else { ui.StatusLabel->setText("Interface state changed. Refreshing…"); RefreshInterfaces(); }
 }
 
 NetworkInterfaces::AdapterSettings NetworkInterfaces::SettingsFromItem(QTreeWidgetItem* item) const { return SettingsFromJson(item ? item->data(0, SettingsRole).toJsonObject() : QJsonObject{}); }
@@ -285,5 +298,22 @@ QString NetworkInterfaces::SelectedAdapterName() const { auto* item = ui.Interfa
 bool NetworkInterfaces::RunNetsh(const QStringList& arguments, QString* error) const { QProcess process; process.start("netsh.exe", arguments); process.waitForFinished(15'000); if (process.exitCode() == 0) return true; if (error) *error = QString::fromLocal8Bit(process.readAllStandardError() + process.readAllStandardOutput()).trimmed(); return false; }
 QJsonObject NetworkInterfaces::SettingsToJson(const AdapterSettings& s) const { QJsonObject value{{"Id",s.id},{"Name",s.name},{"Description",s.description},{"Status",s.status},{"Enabled",s.enabled},{"Dhcp",s.dhcp},{"Address",s.address},{"Gateway",s.gateway},{"Subnet",s.subnet}}; QJsonArray dns; for (const auto& entry : s.dns) dns.append(entry); value["Dns"] = dns; return value; }
 NetworkInterfaces::AdapterSettings NetworkInterfaces::SettingsFromJson(const QJsonObject& v) const { AdapterSettings s; s.id=v["Id"].toString(); s.name=v["Name"].toString(); s.description=v["Description"].toString(); s.status=v["Status"].toString(); s.enabled=v["Enabled"].toBool(); s.dhcp=v["Dhcp"].toBool(); s.address=v["Address"].toString(); s.gateway=v["Gateway"].toString(); s.subnet=v["Subnet"].toString(); const auto prefix=v["Prefix"].toInt(-1); if (prefix >= 0) { quint32 mask = prefix == 0 ? 0 : 0xffffffffu << (32-prefix); s.subnet=QString("%1.%2.%3.%4").arg((mask>>24)&255).arg((mask>>16)&255).arg((mask>>8)&255).arg(mask&255); } for (const auto& dns:v["Dns"].toArray()) s.dns.append(dns.toString()); return s; }
-void NetworkInterfaces::UpdatePresetBox() { const auto current=ui.PresetBox->currentText(); ui.PresetBox->clear(); ui.PresetBox->addItems(presets.keys()); ui.PresetBox->setCurrentText(current); }
+void NetworkInterfaces::UpdatePresetBox()
+{
+	const auto current = ui.PresetBox->currentIndex() > 0 ? ui.PresetBox->currentText() : QString{};
+	{
+		QSignalBlocker blocker(ui.PresetBox);
+		ui.PresetBox->clear();
+		ui.PresetBox->addItem(NewPresetLabel);
+		ui.PresetBox->addItems(presets.keys());
+		if (!current.isEmpty()) ui.PresetBox->setCurrentText(current);
+	}
+	UpdatePresetButtons();
+}
+void NetworkInterfaces::UpdatePresetButtons()
+{
+	const auto existingPresetSelected = ui.PresetBox->currentIndex() > 0 && presets.contains(ui.PresetBox->currentText());
+	ui.LoadPresetButton->setEnabled(existingPresetSelected);
+	ui.DeletePresetButton->setEnabled(existingPresetSelected);
+}
 void NetworkInterfaces::SetBusy(bool busy) { ui.RefreshButton->setDisabled(busy); ui.ApplyButton->setDisabled(busy); }
