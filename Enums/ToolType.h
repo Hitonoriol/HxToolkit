@@ -17,7 +17,7 @@ public:
 		Checklist = 3, TaskTracker = 4, GitlabTasks = 13, GitlabMergeRequests = 14, GitlabTimeStats = 15,
 		Stopwatch = 5, Timer = 6, DateCountdown = 17,
 		RandomNumber = 7, RandomString = 8,
-		FileSearch = 9, SymlinkMover = 19, LogExtractor = 24,
+		FileSearch = 9, SymlinkMover = 19, LogExtractor = 25,
 		Ping = 20, NetworkInterfaces = 22,
 		MeltingScreen = 21,
 		RamMonitor = 11, ClipboardManager = 12, SystemShortcuts = 16,
