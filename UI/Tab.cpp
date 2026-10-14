@@ -55,7 +55,17 @@ void Tab::AddComponent(Component* component, const QString& title, bool fillCont
 	connect(component, &Component::Modified, this, &Tab::ComponentModified);
 	connect(container, &ComponentContainer::CloseClicked, this, std::bind(&Tab::OnComponentClosed, this, container));
 	connect(container, &ComponentContainer::CollapseClicked, this, [this, container](bool collapse) {
-		OnComponentCollapse(container, collapse);
+		if (container->parentWidget()->window() == window()) {
+			OnComponentCollapse(container, collapse);
+		}
+	});
+
+	connect(container, &ComponentContainer::WorkspaceLayoutChanged, this, [this, container](QWidget* row, bool restored) {
+		if (restored) {
+			OnComponentCollapse(container, container->getCollapsed());
+		} else {
+			UpdateRowStretch(row);
+		}
 	});
 
 	emit ComponentModified(nullptr);

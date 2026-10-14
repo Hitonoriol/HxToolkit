@@ -26,16 +26,30 @@ public:
 signals:
 	void CloseClicked();
 	void CollapseClicked(bool collapse);
+	void WorkspaceLayoutChanged(QWidget* row, bool restored);
 
 private slots:
+	void OnCloseClicked();
 	void OnCollapseClicked();
 
 	void OnTitleContextMenuRequested(const QPoint& pos);
 	void OnRenameTriggered();
+	void OnAlwaysOnTopToggled(bool alwaysOnTop);
 
 private:
+	bool eventFilter(QObject* watched, QEvent* event) override;
+	void PopOut();
+	void RestoreToWorkspace();
 	void UpdateCollapseButton();
+	void UpdatePopoutSize(bool collapsed);
 
 	Ui::ComponentContainerClass ui;
 	QPointer<Component> component;
+	QPointer<QWidget> popoutWindow;
+	QPointer<QWidget> workspaceRow;
+	QPointer<QWidget> workspacePlaceholder;
+	QSize expandedWindowSize;
+	QPoint titleDragOffset;
+	int workspacePosition{};
+	bool titleDragging{};
 };
