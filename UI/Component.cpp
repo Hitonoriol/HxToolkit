@@ -16,6 +16,11 @@ ToolType Component::GetType()
 	return type;
 }
 
+QList<ToolConfigurationParameter*> Component::GetConfigurationParameters() const
+{
+	return {};
+}
+
 QJsonObject Component::SaveState()
 {
 	QJsonObject state;

@@ -194,7 +194,8 @@ QIcon AddToolDialog::ToolIcon(ToolType toolType) const
 	case ToolType::LogExtractor: return QIcon(":/icons/text.svg");
 	case ToolType::SymlinkMover: return QIcon(":/icons/link.svg");
 	case ToolType::Ping:
-	case ToolType::NetworkInterfaces: return QIcon(":/icons/network.svg");
+	case ToolType::NetworkInterfaces:
+	case ToolType::Webview: return QIcon(":/icons/network.svg");
 	case ToolType::MeltingScreen: return QIcon(":/icons/melting-screen.svg");
 	case ToolType::RamMonitor: return QIcon(":/icons/memory.svg");
 	case ToolType::ClipboardManager: return QIcon(":/icons/clipboard.svg");

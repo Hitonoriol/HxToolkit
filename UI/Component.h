@@ -5,9 +5,11 @@
 #include "Enums/ToolType.h"
 
 #include <QJsonObject>
+#include <QList>
 #include <QPointer>
 
 class ComponentContainer;
+class ToolConfigurationParameter;
 
 class Component : public QWidget
 {
@@ -19,6 +21,7 @@ public:
 	virtual ~Component();
 
 	ToolType GetType();
+	virtual QList<ToolConfigurationParameter*> GetConfigurationParameters() const;
 
 	virtual QJsonObject SaveState();
 	virtual void LoadState(const QJsonObject& state);

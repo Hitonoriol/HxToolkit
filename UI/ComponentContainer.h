@@ -42,6 +42,7 @@ private:
 	void RestoreToWorkspace();
 	void UpdateCollapseButton();
 	void UpdatePopoutSize(bool collapsed);
+	void PopulateConfigurationMenu();
 
 	Ui::ComponentContainerClass ui;
 	QPointer<Component> component;
