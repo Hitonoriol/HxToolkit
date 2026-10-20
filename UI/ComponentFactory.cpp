@@ -26,6 +26,9 @@
 #include "System/RamMonitor.h"
 #include "System/ClipboardHistory.h"
 #include "System/SystemShortcuts.h"
+#ifdef _WIN32
+#include "System/WindowBox.h"
+#endif
 
 #include "Network/Ping.h"
 #include "Network/NetworkInterfaces.h"
@@ -40,22 +43,22 @@
 #include <QMessageBox>
 
 std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
-	{ToolType::BaseConverter, {"General", "Base converter", DefaultSupplier<BaseConverter>(false)}},
-	{ToolType::Calculator, {"General", "Calculator", DefaultSupplier<Calculator>(false)}},
-	{ToolType::ColorPicker, {"General", "Color picker", DefaultSupplier<ColorPicker>(false)}},
-	{ToolType::MarkdownEditor, {"General", "Markdown editor", DefaultSupplier<MarkdownEditor>()}},
+	{ToolType::BaseConverter, {"General", "Base converter", ":/icons/calculator.svg", DefaultSupplier<BaseConverter>(false)}},
+	{ToolType::Calculator, {"General", "Calculator", ":/icons/calculator.svg", DefaultSupplier<Calculator>(false)}},
+	{ToolType::ColorPicker, {"General", "Color picker", ":/icons/pipette.svg", DefaultSupplier<ColorPicker>(false)}},
+	{ToolType::MarkdownEditor, {"General", "Markdown editor", ":/icons/text.svg", DefaultSupplier<MarkdownEditor>()}},
 
-	{ToolType::Checklist, {"Productivity", "Checklist", DefaultSupplier<Checklist>(false)}},
-	{ToolType::GitlabTasks, {"GitLab", "GitLab Tasks", DefaultSupplier<GitlabTasks>()}},
-	{ToolType::GitlabMergeRequests, {"GitLab", "GitLab MRs", DefaultSupplier<GitlabMergeRequests>()}},
-	{ToolType::GitlabTimeStats, {"GitLab", "GitLab Time Stats", DefaultSupplier<GitlabTimeStats>()}},
-	{ToolType::TaskTracker, {"Productivity", "Task tracker", DefaultSupplier<TaskTracker>(false)}},
-	{ToolType::FocusTracker, {"Productivity", "Focus Tracker", DefaultSupplier<FocusTracker>()}},
+	{ToolType::Checklist, {"Productivity", "Checklist", ":/icons/checklist.svg", DefaultSupplier<Checklist>(false)}},
+	{ToolType::GitlabTasks, {"GitLab", "GitLab Tasks", ":/icons/gitlab.svg", DefaultSupplier<GitlabTasks>()}},
+	{ToolType::GitlabMergeRequests, {"GitLab", "GitLab MRs", ":/icons/gitlab.svg", DefaultSupplier<GitlabMergeRequests>()}},
+	{ToolType::GitlabTimeStats, {"GitLab", "GitLab Time Stats", ":/icons/gitlab.svg", DefaultSupplier<GitlabTimeStats>()}},
+	{ToolType::TaskTracker, {"Productivity", "Task tracker", ":/icons/checklist.svg", DefaultSupplier<TaskTracker>(false)}},
+	{ToolType::FocusTracker, {"Productivity", "Focus Tracker", ":/icons/clock.svg", DefaultSupplier<FocusTracker>()}},
 
-	{ToolType::Stopwatch, {"Time", "Stopwatch", DefaultSupplier<Stopwatch>(false)}},
-	{ToolType::DateCountdown, {"Time", "Date Countdown", DefaultSupplier<DateCountdown>(false)}},
+	{ToolType::Stopwatch, {"Time", "Stopwatch", ":/icons/clock.svg", DefaultSupplier<Stopwatch>(false)}},
+	{ToolType::DateCountdown, {"Time", "Date Countdown", ":/icons/clock.svg", DefaultSupplier<DateCountdown>(false)}},
 
-	{ToolType::Timer, {"Time", "Timer", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
+	{ToolType::Timer, {"Time", "Timer", ":/icons/clock.svg", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
 		auto timer = new Timer;
 		toolkit->connect(timer, &Timer::TimerCompleted, toolkit, [toolkit](int64_t startTime, Time duration) {
 			if (!toolkit->isVisible()) {
@@ -83,27 +86,30 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 		return timer;
 	}}},
 
-	{ToolType::RandomNumber, {"Random", "Random number", DefaultSupplier<RandomNumber>(false)}},
-	{ToolType::RandomString, {"Random", "Random string", DefaultSupplier<RandomString>(false)}},
-	{ToolType::FileSearch, {"Filesystem", "File search", DefaultSupplier<FileSearch>()}},
-	{ToolType::LogExtractor, {"Filesystem", "Log Extractor", DefaultSupplier<LogExtractor>()}},
-	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", DefaultSupplier<SymlinkMover>()}},
-	{ToolType::Ping, {"Network", "Ping", DefaultSupplier<Ping>(false)}},
-	{ToolType::NetworkInterfaces, {"Network", "Network interfaces", DefaultSupplier<NetworkInterfaces>()}},
+	{ToolType::RandomNumber, {"Random", "Random number", ":/icons/random.svg", DefaultSupplier<RandomNumber>(false)}},
+	{ToolType::RandomString, {"Random", "Random string", ":/icons/random.svg", DefaultSupplier<RandomString>(false)}},
+	{ToolType::FileSearch, {"Filesystem", "File search", ":/icons/folder-search.svg", DefaultSupplier<FileSearch>()}},
+	{ToolType::LogExtractor, {"Filesystem", "Log Extractor", ":/icons/text.svg", DefaultSupplier<LogExtractor>()}},
+	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", ":/icons/link.svg", DefaultSupplier<SymlinkMover>()}},
+	{ToolType::Ping, {"Network", "Ping", ":/icons/network.svg", DefaultSupplier<Ping>(false)}},
+	{ToolType::NetworkInterfaces, {"Network", "Network interfaces", ":/icons/network.svg", DefaultSupplier<NetworkInterfaces>()}},
 #ifdef _WIN32
-	{ToolType::Webview, {"Network", "Webview", DefaultSupplier<Webview>()}},
+	{ToolType::Webview, {"Network", "Webview", ":/icons/network.svg", DefaultSupplier<Webview>()}},
 #endif
-	{ToolType::MeltingScreen, {"Screensavers", "Melting screen", DefaultSupplier<MeltingScreen>(false)}},
-	{ToolType::RamMonitor, {"System", "RAM monitor", DefaultSupplier<RamMonitor>(false)}},
-	{ToolType::ClipboardManager, {"System", "Clipboard history", DefaultSupplier<ClipboardHistory>()}},
-	{ToolType::SystemShortcuts, {"System", "System Shortcuts", DefaultSupplier<SystemShortcuts>(false)}}
+	{ToolType::MeltingScreen, {"Screensavers", "Melting screen", ":/icons/melting-screen.svg", DefaultSupplier<MeltingScreen>(false)}},
+	{ToolType::RamMonitor, {"System", "RAM monitor", ":/icons/memory.svg", DefaultSupplier<RamMonitor>(false)}},
+	{ToolType::ClipboardManager, {"System", "Clipboard history", ":/icons/clipboard.svg", DefaultSupplier<ClipboardHistory>()}},
+	{ToolType::SystemShortcuts, {"System", "System Shortcuts", ":/icons/keyboard.svg", DefaultSupplier<SystemShortcuts>(false)}},
+#ifdef _WIN32
+	{ToolType::WindowBox, {"System", "Window Box", ":/icons/expand.svg", DefaultSupplier<WindowBox>()}}
+#endif
 };
 
 QList<ToolInfo> ComponentFactory::AvailableTools()
 {
 	QList<ToolInfo> tools;
 	for (auto& [toolType, supplierEntry] : componentSuppliers) {
-		tools.append({toolType, supplierEntry.CategoryName, supplierEntry.ToolName});
+		tools.append({toolType, supplierEntry.CategoryName, supplierEntry.ToolName, supplierEntry.IconPath});
 	}
 	return tools;
 }
