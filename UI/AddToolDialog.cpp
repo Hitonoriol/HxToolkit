@@ -3,6 +3,7 @@
 #include <oclero/qlementine/widgets/Expander.hpp>
 
 #include <QFrame>
+#include <QIcon>
 #include <QLabel>
 #include <QButtonGroup>
 #include <QMap>
@@ -158,7 +159,7 @@ void AddToolDialog::UpdateResults(const QString& query)
 void AddToolDialog::AddToolButton(QVBoxLayout* layout, const ToolInfo& tool, bool showCategory)
 {
 	auto* button = new ToolSelectionButton(showCategory ? QString("%1  ·  %2").arg(tool.ToolName, tool.CategoryName) : tool.ToolName, this);
-	button->setIcon(ToolIcon(tool.Type));
+	button->setIcon(QIcon(tool.IconPath));
 	button->setIconSize({18, 18});
 	button->setAutoDefault(false);
 	button->setDefault(false);
@@ -170,38 +171,6 @@ void AddToolDialog::AddToolButton(QVBoxLayout* layout, const ToolInfo& tool, boo
 		accept();
 	});
 	layout->addWidget(button);
-}
-
-QIcon AddToolDialog::ToolIcon(ToolType toolType) const
-{
-	switch (toolType) {
-	case ToolType::BaseConverter:
-	case ToolType::Calculator: return QIcon(":/icons/calculator.svg");
-	case ToolType::ColorPicker: return QIcon(":/icons/pipette.svg");
-	case ToolType::MarkdownEditor: return QIcon(":/icons/text.svg");
-	case ToolType::Checklist:
-	case ToolType::TaskTracker: return QIcon(":/icons/checklist.svg");
-	case ToolType::FocusTracker: return QIcon(":/icons/clock.svg");
-	case ToolType::GitlabTasks:
-	case ToolType::GitlabMergeRequests:
-	case ToolType::GitlabTimeStats: return QIcon(":/icons/gitlab.svg");
-	case ToolType::Stopwatch:
-	case ToolType::Timer:
-	case ToolType::DateCountdown: return QIcon(":/icons/clock.svg");
-	case ToolType::RandomNumber:
-	case ToolType::RandomString: return QIcon(":/icons/random.svg");
-	case ToolType::FileSearch: return QIcon(":/icons/folder-search.svg");
-	case ToolType::LogExtractor: return QIcon(":/icons/text.svg");
-	case ToolType::SymlinkMover: return QIcon(":/icons/link.svg");
-	case ToolType::Ping:
-	case ToolType::NetworkInterfaces:
-	case ToolType::Webview: return QIcon(":/icons/network.svg");
-	case ToolType::MeltingScreen: return QIcon(":/icons/melting-screen.svg");
-	case ToolType::RamMonitor: return QIcon(":/icons/memory.svg");
-	case ToolType::ClipboardManager: return QIcon(":/icons/clipboard.svg");
-	case ToolType::SystemShortcuts: return QIcon(":/icons/keyboard.svg");
-	default: return {};
-	}
 }
 
 bool AddToolDialog::MatchesFuzzy(const QString& name, const QString& query) const

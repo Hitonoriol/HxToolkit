@@ -4,7 +4,6 @@
 #include "ui_AddToolDialog.h"
 
 #include <QDialog>
-#include <QIcon>
 
 class QVBoxLayout;
 
@@ -25,7 +24,6 @@ private:
 	void UpdateResults(const QString& query);
 	void AddToolButton(QVBoxLayout* layout, const ToolInfo& tool, bool showCategory = false);
 	bool MatchesFuzzy(const QString& name, const QString& query) const;
-	QIcon ToolIcon(ToolType toolType) const;
 
 	QList<ToolInfo> tools;
 	Ui::AddToolDialog ui;

@@ -17,10 +17,11 @@ struct ComponentSupplierEntry
 {
 	QString CategoryName;
 	QString ToolName;
+	QString IconPath;
 	ComponentSupplier Supplier;
 
-	ComponentSupplierEntry(const QString& CategoryName, const QString& ToolName, NamedComponentSupplier Supplier)
-		: CategoryName(CategoryName), ToolName(ToolName)
+	ComponentSupplierEntry(const QString& CategoryName, const QString& ToolName, const QString& IconPath, NamedComponentSupplier Supplier)
+		: CategoryName(CategoryName), ToolName(ToolName), IconPath(IconPath)
 	{
 		this->Supplier = [ToolName, Supplier](HxNxToolkit* toolkit) {
 			return Supplier(toolkit, ToolName);
@@ -33,6 +34,7 @@ struct ToolInfo
 	ToolType Type;
 	QString CategoryName;
 	QString ToolName;
+	QString IconPath;
 };
 
 class ComponentFactory

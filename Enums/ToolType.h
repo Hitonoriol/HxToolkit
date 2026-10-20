@@ -22,7 +22,8 @@ public:
 		MeltingScreen = 21,
 		RamMonitor = 11, ClipboardManager = 12, SystemShortcuts = 16,
 		FocusTracker = 23,
-		Webview = 24
+		Webview = 24,
+		WindowBox = 26
 	};
 	Q_ENUM(Value)
 };
