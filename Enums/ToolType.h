@@ -23,7 +23,7 @@ public:
 		RamMonitor = 11, ClipboardManager = 12, SystemShortcuts = 16,
 		FocusTracker = 23,
 		Webview = 24,
-		WindowBox = 26
+		WindowBox = 26, AlwaysOnTop = 27
 	};
 	Q_ENUM(Value)
 };
