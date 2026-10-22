@@ -27,6 +27,7 @@
 #include "System/ClipboardHistory.h"
 #include "System/SystemShortcuts.h"
 #ifdef _WIN32
+#include "System/AlwaysOnTop.h"
 #include "System/WindowBox.h"
 #endif
 
@@ -101,7 +102,8 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::ClipboardManager, {"System", "Clipboard history", ":/icons/clipboard.svg", DefaultSupplier<ClipboardHistory>()}},
 	{ToolType::SystemShortcuts, {"System", "System Shortcuts", ":/icons/keyboard.svg", DefaultSupplier<SystemShortcuts>(false)}},
 #ifdef _WIN32
-	{ToolType::WindowBox, {"System", "Window Box", ":/icons/expand.svg", DefaultSupplier<WindowBox>()}}
+	{ToolType::WindowBox, {"System", "Window Box", ":/icons/expand.svg", DefaultSupplier<WindowBox>()}},
+	{ToolType::AlwaysOnTop, {"System", "Always on top", ":/icons/tool-move-up.svg", DefaultSupplier<AlwaysOnTop>()}}
 #endif
 };
 

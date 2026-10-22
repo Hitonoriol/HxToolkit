@@ -8,7 +8,6 @@
 
 class QComboBox;
 class QEvent;
-class QIcon;
 class QPushButton;
 class QWindow;
 class ToolConfigurationParameter;
@@ -31,9 +30,6 @@ private:
 	bool eventFilter(QObject* watched, QEvent* event) override;
 	void RefreshWindows();
 	bool Unbox();
-	static BOOL CALLBACK EnumerateWindow(HWND window, LPARAM context);
-	static bool IsSelectableWindow(HWND window);
-	static QIcon GetWindowIcon(HWND window);
 
 	QComboBox* windowCombo;
 	QPushButton* boxButton;

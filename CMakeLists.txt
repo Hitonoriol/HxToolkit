@@ -31,7 +31,7 @@ endforeach()
 
 if(NOT WIN32)
     list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/Network/(Webview|WebView2Widget)\\.(cpp|h)$")
-    list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/System/WindowBox\\.(cpp|h)$")
+    list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/System/(AlwaysOnTop|WindowBox|WindowsHelper)\\.(cpp|h)$")
 endif()
 
 add_library(tinyexpr STATIC
