@@ -23,6 +23,7 @@ public:
 	Tab* NewTab();
 	Tab* GetCurrentTab();
 	void SaveCurrentWorkspace();
+	void ShowNotification(Component* component, const QString& title, const QString& message);
 
 protected:
 	virtual void closeEvent(QCloseEvent* event) override;
@@ -45,6 +46,7 @@ public slots:
 
 private slots:
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);
+	void NotificationClicked();
 	void AlwaysOnTopToggled(bool onTop);
 	void SettingsTriggered();
 	void TabContextMenuRequested(const QPoint& pos);

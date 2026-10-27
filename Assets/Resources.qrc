@@ -13,6 +13,7 @@
         <file>tool-expand.svg</file>
         <file>tool-collapse.svg</file>
         <file>tool-close.svg</file>
+        <file>tool-options.svg</file>
         <file>split-horizontal.svg</file>
         <file>split-vertical.svg</file>
         <file>add.svg</file>
@@ -30,6 +31,7 @@
         <file>chevron-right.svg</file>
         <file>network.svg</file>
         <file>melting-screen.svg</file>
+        <file>window-box.svg</file>
     </qresource>
     <qresource prefix="/themes">
         <file alias="qlementine-dark.json">themes/qlementine-dark.json</file>

@@ -18,6 +18,8 @@ ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 	component->container = this;
 
 	ui.Content->layout()->addWidget(component);
+	ui.ConfigurationBtn->setIcon(QIcon(":/icons/tool-options.svg"));
+	ui.ConfigurationBtn->setStyleSheet("QToolButton::menu-indicator { image: none; width: 0px; }");
 	ui.Title->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
 	ui.CloseBtn->setIcon(QIcon(":/icons/tool-close.svg"));
 	PopulateConfigurationMenu();

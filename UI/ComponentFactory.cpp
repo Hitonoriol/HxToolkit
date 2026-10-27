@@ -33,6 +33,7 @@
 
 #include "Network/Ping.h"
 #include "Network/NetworkInterfaces.h"
+#include "Network/RSSFeed.h"
 #ifdef _WIN32
 #include "Network/Webview.h"
 #endif
@@ -94,6 +95,19 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", ":/icons/link.svg", DefaultSupplier<SymlinkMover>()}},
 	{ToolType::Ping, {"Network", "Ping", ":/icons/network.svg", DefaultSupplier<Ping>(false)}},
 	{ToolType::NetworkInterfaces, {"Network", "Network interfaces", ":/icons/network.svg", DefaultSupplier<NetworkInterfaces>()}},
+	{ToolType::RSSFeed, {"Network", "RSS Feed", ":/icons/network.svg", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
+		auto rssFeed = new RSSFeed;
+		toolkit->connect(rssFeed, &RSSFeed::UpdatesAvailable, toolkit, [toolkit, rssFeed](const QString& title, const QString& message) {
+			toolkit->ShowNotification(rssFeed, title, message);
+		});
+		auto tab = toolkit->GetCurrentTab();
+		if (!tab) {
+			tab = toolkit->NewTab();
+		}
+
+		tab->AddComponent(rssFeed, name, true);
+		return rssFeed;
+	}}},
 #ifdef _WIN32
 	{ToolType::Webview, {"Network", "Webview", ":/icons/network.svg", DefaultSupplier<Webview>()}},
 #endif
@@ -102,7 +116,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::ClipboardManager, {"System", "Clipboard history", ":/icons/clipboard.svg", DefaultSupplier<ClipboardHistory>()}},
 	{ToolType::SystemShortcuts, {"System", "System Shortcuts", ":/icons/keyboard.svg", DefaultSupplier<SystemShortcuts>(false)}},
 #ifdef _WIN32
-	{ToolType::WindowBox, {"System", "Window Box", ":/icons/expand.svg", DefaultSupplier<WindowBox>()}},
+	{ToolType::WindowBox, {"System", "Window Box", ":/icons/window-box.svg", DefaultSupplier<WindowBox>()}},
 	{ToolType::AlwaysOnTop, {"System", "Always on top", ":/icons/tool-move-up.svg", DefaultSupplier<AlwaysOnTop>()}}
 #endif
 };
