@@ -22,6 +22,7 @@ public:
 	QString getTitle();
 	void setFillContainer(bool fill);
 	bool getCollapsed() const;
+	Component* GetComponent() const;
 
 signals:
 	void CloseClicked();

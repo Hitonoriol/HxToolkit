@@ -11,6 +11,7 @@
 
 class Tab;
 class Component;
+class UndoManager;
 
 class HxNxToolkit : public QMainWindow
 {
@@ -32,7 +33,7 @@ protected:
 public slots:
 	void NewTabTriggered();
 	void OnTabClose(int idx);
-	void OnTabModified(Tab* tab);
+	void OnTabModified(Tab* tab, Component* component, bool undoable = true);
 	void OnTabSaved(Tab* tab);
 
 	void Autosave();
@@ -60,11 +61,12 @@ private:
 	void LoadWorkspace();
 	bool LoadWorkspaceFromPath(const QString& workspacePath);
 	bool ConfirmWorkspaceReplacement();
-	bool HasModifiedTabs() const;
 	void ClearTabs();
 	void UpdateWindowTitle();
 
 	void SetTabTitle(int tabIdx, const QString& newTitle);
+	void RestoreClosedTab(const QJsonObject& state, int tabIdx);
+	void UndoCleanStateChanged(bool clean);
 
 	void Quit();
 
@@ -72,6 +74,7 @@ private:
 
 	QSystemTrayIcon* trayIcon;
 	QMenu* trayMenu;
+	UndoManager* undoManager{};
 
 	QTimer autosaveTimer;
 	QString workspacePath;

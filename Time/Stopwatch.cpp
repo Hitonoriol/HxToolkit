@@ -51,6 +51,14 @@ QJsonObject Stopwatch::SaveState()
 void Stopwatch::LoadState(const QJsonObject& state)
 {
 	Component::LoadState(state);
+	updateTimer.stop();
+	startTime = 0;
+	savedTime = 0;
+	lastPoint = 0;
+	ui.TimeLabel->setText(Time::GetTimeString(0));
+	ui.TimeTable->setRowCount(0);
+	ui.StartPauseButton->setText("Start");
+	ui.TimePointButton->setEnabled(false);
 
 	auto hasState = state["HasState"].toBool();
 

@@ -108,6 +108,11 @@ bool ComponentContainer::getCollapsed() const
 	return ui.Content->isHidden();
 }
 
+Component* ComponentContainer::GetComponent() const
+{
+	return component;
+}
+
 bool ComponentContainer::eventFilter(QObject* watched, QEvent* event)
 {
 	if (watched == popoutWindow && event->type() == QEvent::Close) {

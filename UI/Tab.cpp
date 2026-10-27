@@ -4,6 +4,8 @@
 #include <QVBoxLayout>
 #include <QJsonArray>
 
+#include <algorithm>
+
 Tab::Tab(QWidget* parent)
 	: QWidget(parent)
 {
@@ -16,10 +18,10 @@ Tab::Tab(QWidget* parent)
 Tab::~Tab()
 {}
 
-void Tab::ComponentModified(Component* component)
+void Tab::ComponentModified(Component* component, bool undoable)
 {
-	emit TabModified(this);
 	modified = true;
+	emit TabModified(this, component, undoable);
 }
 
 void Tab::SetSavePath(const QString& savePath)
@@ -68,14 +70,40 @@ void Tab::AddComponent(Component* component, const QString& title, bool fillCont
 		}
 	});
 
-	emit ComponentModified(nullptr);
+	emit ComponentAdded(this, container, GetComponentLocation(container));
 }
 
 void Tab::OnComponentClosed(ComponentContainer* container)
 {
+	auto location = DetachComponent(container);
+	emit ComponentRemoved(this, container, location);
+}
+
+void Tab::AttachComponent(ComponentContainer* container, const ComponentLocation& location)
+{
+	auto rowIdx = std::clamp(location.Row, 0, ui.WorkspaceLayout->count());
+	auto row = rowIdx < ui.WorkspaceLayout->count() ? ui.WorkspaceLayout->itemAt(rowIdx)->widget() : nullptr;
+
+	if (!row) {
+		row = new QWidget(this);
+		auto rowLayout = new QHBoxLayout(row);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(0);
+		ui.WorkspaceLayout->insertWidget(rowIdx, row, 1);
+	}
+
+	auto rowLayout = dynamic_cast<QBoxLayout*>(row->layout());
+	assert(rowLayout);
+	rowLayout->insertWidget(std::clamp(location.Column, 0, rowLayout->count()), container, 1);
+	UpdateRowStretch(row);
+}
+
+Tab::ComponentLocation Tab::DetachComponent(ComponentContainer* container)
+{
+	auto location = GetComponentLocation(container);
 	auto row = container->parentWidget();
 	row->layout()->removeWidget(container);
-	container->deleteLater();
+	container->setParent(nullptr);
 
 	if (row->layout()->isEmpty()) {
 		ui.WorkspaceLayout->removeWidget(row);
@@ -84,7 +112,7 @@ void Tab::OnComponentClosed(ComponentContainer* container)
 		UpdateRowStretch(row);
 	}
 
-	Modify();
+	return location;
 }
 
 void Tab::OnComponentCollapse(ComponentContainer* container, bool collapse)
@@ -130,7 +158,14 @@ QWidget* Tab::GetLastRow() const
 	return ui.WorkspaceLayout->itemAt(ui.WorkspaceLayout->count() - 1)->widget();
 }
 
-QJsonObject Tab::SaveState()
+Tab::ComponentLocation Tab::GetComponentLocation(ComponentContainer* container) const
+{
+	auto row = container->parentWidget();
+	auto rowLayout = row ? row->layout() : nullptr;
+	return {ui.WorkspaceLayout->indexOf(row), rowLayout ? rowLayout->indexOf(container) : -1};
+}
+
+QJsonObject Tab::GetState() const
 {
 	QJsonObject state;
 	QJsonArray arr;
@@ -139,11 +174,25 @@ QJsonObject Tab::SaveState()
 		arr.append(component->SaveState());
 	}
 	state["Components"] = arr;
+	return state;
+}
 
+QJsonObject Tab::SaveState()
+{
+	auto state = GetState();
+	MarkSaved();
+	return state;
+}
+
+void Tab::MarkSaved()
+{
 	emit TabSaved(this);
 	modified = false;
+}
 
-	return state;
+void Tab::MarkModified()
+{
+	modified = true;
 }
 
 void Tab::LoadState(const QJsonObject& state)
@@ -177,6 +226,6 @@ void Tab::SetVerticalSplit(bool vertical)
 
 void Tab::Modify()
 {
-	emit TabModified(this);
 	modified = true;
+	emit TabModified(this, nullptr, false);
 }

@@ -32,6 +32,9 @@ QJsonObject Checklist::SaveState()
 void Checklist::LoadState(const QJsonObject& state)
 {
 	Component::LoadState(state);
+	for (auto entry : findChildren<ChecklistEntry*>()) {
+		delete entry;
+	}
 
 	auto entries = state["Entries"].toArray();
 	for (auto entry : entries) {
@@ -53,6 +56,7 @@ ChecklistEntry* Checklist::AddEntry()
 
 	connect(entry, &ChecklistEntry::CheckboxValueChanged, this, [this] { emit Modified(this); });
 	connect(entry, &ChecklistEntry::DescriptionChanged, this, [this]{ emit Modified(this); });
+	connect(entry, &ChecklistEntry::Deleted, this, [this] { emit Modified(this); });
 
 	emit Modified(this);
 	return entry;

@@ -59,6 +59,7 @@ void FileSearch::LoadState(const QJsonObject& state)
 	    HX_DESERIALIZE(ui.SearchPatternField, setText, toString);
 	);
 
+	ui.ResultList->clear();
 	auto searchResults = state["SearchResults"].toArray();
 	for (auto searchResultJson : searchResults) {
 		ui.ResultList->addItem(searchResultJson.toString());

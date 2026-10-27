@@ -20,6 +20,7 @@ public:
 signals:
 	void CheckboxValueChanged(bool value);
 	void DescriptionChanged(QString text);
+	void Deleted();
 
 private slots:
 	void OnCheckboxValueChange(bool value);

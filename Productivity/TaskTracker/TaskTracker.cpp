@@ -10,6 +10,7 @@ TaskTracker::TaskTracker(QWidget *parent)
 {
 	ui.setupUi(this);
 	ui.DateField->setDate(QDateTime::currentDateTime().date());
+	connect(ui.DateField, &QDateEdit::dateChanged, this, [this] { emit Modified(this); });
 }
 
 TaskTracker::~TaskTracker()
@@ -36,6 +37,11 @@ QJsonObject TaskTracker::SaveState()
 void TaskTracker::LoadState(const QJsonObject& state)
 {
 	Component::LoadState(state);
+	for (auto entry : findChildren<TaskTrackerEntry*>()) {
+		delete entry;
+	}
+	lastEntry = {};
+	ui.StartButton->setVisible(true);
 
 	auto entries = state["Tasks"].toArray();
 	if (!entries.isEmpty()) {
