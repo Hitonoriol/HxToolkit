@@ -33,4 +33,5 @@ void MarkdownEditor::onEditorTextChanged()
 	std::stringstream markdown(ui.EditorField->toPlainText().toStdString());
 	auto html = markdownParser->Parse(markdown);
 	ui.MarkdownField->setHtml(html.data());
+	emit Modified(this);
 }

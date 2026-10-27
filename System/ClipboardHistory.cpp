@@ -59,6 +59,7 @@ QJsonObject ClipboardHistory::SaveState()
 void ClipboardHistory::LoadState(const QJsonObject& state)
 {
 	Component::LoadState(state);
+	ui.ClipboardList->clear();
 
 	for (auto itemRef : state["Items"].toArray()) {
 		auto itemJson = itemRef.toObject();
@@ -131,7 +132,7 @@ void ClipboardHistory::OnClipboardChanged(QClipboard::Mode mode)
 		ui.ClipboardList->insertItem(0, item);
 	}
 
-	emit Modified(this);
+	emit Modified(this, false);
 }
 
 void ClipboardHistory::OnSelectedItemChanged(QListWidgetItem* current, QListWidgetItem*)

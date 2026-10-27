@@ -27,7 +27,7 @@ public:
 	virtual void LoadState(const QJsonObject& state);
 
 signals:
-	void Modified(Component* component);
+	void Modified(Component* component, bool undoable = true);
 
 private:
 	ToolType type;

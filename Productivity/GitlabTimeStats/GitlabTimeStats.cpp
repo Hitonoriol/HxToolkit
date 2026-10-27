@@ -17,6 +17,8 @@ GitlabTimeStats::GitlabTimeStats(QWidget* parent)
 	gitlabClient = new GitlabClient(this);
 	connect(ui.PeriodComboBox, &QComboBox::currentIndexChanged, this, &GitlabTimeStats::RefreshTimeStats);
 	connect(ui.GroupComboBox, &QComboBox::currentIndexChanged, this, &GitlabTimeStats::OnTimeStatsUpdated);
+	connect(ui.PeriodComboBox, &QComboBox::currentIndexChanged, this, [this] { emit Modified(this); });
+	connect(ui.GroupComboBox, &QComboBox::currentIndexChanged, this, [this] { emit Modified(this); });
 	connect(gitlabClient, &GitlabClient::TimeStatsUpdated, this, &GitlabTimeStats::OnTimeStatsUpdated);
 	connect(gitlabClient, &GitlabClient::requestFailed, this, &GitlabTimeStats::OnGitlabRequestFailed);
 	RefreshTimeStats();

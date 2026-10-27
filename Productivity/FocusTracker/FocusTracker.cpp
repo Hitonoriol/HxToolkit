@@ -25,6 +25,7 @@ FocusTracker::FocusTracker(QWidget* parent)
 
 	connect(&trackingTimer, &QTimer::timeout, this, &FocusTracker::TrackForegroundWindow);
 	connect(ui.PeriodSelect, &QComboBox::currentIndexChanged, this, &FocusTracker::UpdateTable);
+	connect(ui.PeriodSelect, &QComboBox::currentIndexChanged, this, [this] { emit Modified(this); });
 	TrackForegroundWindow();
 	trackingTimer.start(1'000);
 }
@@ -127,7 +128,7 @@ void FocusTracker::TrackForegroundWindow()
 
 	if (windowId == currentWindowId && processName == currentProcessName && title == currentTitle && executablePath == currentExecutablePath) {
 		UpdateTable();
-		emit Modified(this);
+		emit Modified(this, false);
 		return;
 	}
 
@@ -138,7 +139,7 @@ void FocusTracker::TrackForegroundWindow()
 	currentExecutablePath = executablePath;
 	sessions.append({ processName, title, executablePath, now, {} });
 	UpdateTable();
-	emit Modified(this);
+	emit Modified(this, false);
 }
 
 void FocusTracker::UpdateTable()

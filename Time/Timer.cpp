@@ -33,6 +33,9 @@ QJsonObject Timer::SaveState()
 void Timer::LoadState(const QJsonObject& state)
 {
 	Component::LoadState(state);
+	updateTimer.stop();
+	ui.TimeEdit->setEnabled(true);
+	ui.StartPauseButton->setText("Start");
 
 	HX_JSON_SCOPE(state,
 		HX_DESERIALIZE(ui.HourBox, setValue, toInt);

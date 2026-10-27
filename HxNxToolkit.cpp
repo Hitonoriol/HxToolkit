@@ -1,7 +1,9 @@
 #include "HxNxToolkit.h"
 
 #include "App/SettingsWindow.h"
+#include "App/UndoManager.h"
 #include "UI/Tab.h"
+#include "UI/ComponentContainer.h"
 #include "UI/AddToolDialog.h"
 #include "UI/ComponentFactory.h"
 #include "Util/Settings.h"
@@ -65,6 +67,13 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 			ui.Tabs->setTabIcon(tabIdx, {});
 		}
 	});
+	connect(ui.Tabs->tabBar(), &QTabBar::tabMoved, this, [this] {
+		workspaceModified = true;
+		UpdateWindowTitle();
+		if (undoManager) {
+			undoManager->MarkDirty();
+		}
+	});
 
 	auto launchArgs = QApplication::arguments();
 
@@ -86,6 +95,10 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 			resize(Settings::GetSize(Option::WindowSize));
 		}
 	}
+
+	undoManager = new UndoManager(this,
+		[this](const QJsonObject& state, int tabIdx) { RestoreClosedTab(state, tabIdx); },
+		[this](bool clean) { UndoCleanStateChanged(clean); });
 }
 
 HxNxToolkit::~HxNxToolkit()
@@ -134,6 +147,24 @@ Tab* HxNxToolkit::NewTab()
 	});
 	connect(tab, &Tab::TabModified, this, &HxNxToolkit::OnTabModified);
 	connect(tab, &Tab::TabSaved, this, &HxNxToolkit::OnTabSaved);
+	connect(tab, &Tab::ComponentAdded, this,
+		[this](Tab* tab, ComponentContainer* container, const Tab::ComponentLocation& location) {
+			if (undoManager) {
+				undoManager->ComponentAdded(tab, container, location);
+			}
+
+			tab->MarkModified();
+			OnTabModified(tab, container->GetComponent());
+		});
+	connect(tab, &Tab::ComponentRemoved, this,
+		[this](Tab* tab, ComponentContainer* container, const Tab::ComponentLocation& location) {
+			if (undoManager) {
+				undoManager->ComponentRemoved(tab, container, location);
+			}
+
+			tab->MarkModified();
+			OnTabModified(tab, container->GetComponent());
+		});
 	return tab;
 }
 
@@ -189,6 +220,7 @@ void HxNxToolkit::NewTabTriggered()
 	NewTab();
 	workspaceModified = true;
 	UpdateWindowTitle();
+	undoManager->MarkDirty();
 }
 
 void HxNxToolkit::closeEvent(QCloseEvent* event)
@@ -222,26 +254,52 @@ void HxNxToolkit::changeEvent(QEvent* event)
 
 void HxNxToolkit::OnTabClose(int idx)
 {
-	ui.Tabs->removeTab(idx);
-	workspaceModified = true;
-	UpdateWindowTitle();
-}
+	if (idx < 0 || idx >= ui.Tabs->count()) {
+		return;
+	}
 
-void HxNxToolkit::OnTabModified(Tab* tab)
-{
-	const auto index = ui.Tabs->indexOf(tab);
-	if (index >= 0 && !tab->IsModified() && !ui.Tabs->tabText(index).endsWith('*')) {
-		ui.Tabs->setTabText(index, ui.Tabs->tabText(index) + "*");
+	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(idx));
+	if (undoManager && tab) {
+		auto state = tab->GetState();
+		auto title = ui.Tabs->tabText(idx);
+		if (title.endsWith('*')) {
+			title.chop(1);
+		}
+		state["Title"] = title;
+		state["Modified"] = tab->IsModified();
+		undoManager->AddClosedTab(state, idx);
+	}
+
+	ui.Tabs->removeTab(idx);
+	if (tab) {
+		tab->deleteLater();
 	}
 	workspaceModified = true;
 	UpdateWindowTitle();
 }
 
+void HxNxToolkit::OnTabModified(Tab* tab, Component* component, bool undoable)
+{
+	const auto tabIdx = ui.Tabs->indexOf(tab);
+	if (tabIdx >= 0 && tab->IsModified() && !ui.Tabs->tabText(tabIdx).endsWith('*')) {
+		ui.Tabs->setTabText(tabIdx, ui.Tabs->tabText(tabIdx) + "*");
+	}
+	workspaceModified = true;
+	UpdateWindowTitle();
+	if (undoManager) {
+		if (component) {
+			undoManager->ComponentChanged(component, undoable);
+		} else {
+			undoManager->MarkDirty();
+		}
+	}
+}
+
 void HxNxToolkit::OnTabSaved(Tab* tab)
 {
-	const auto index = ui.Tabs->indexOf(tab);
-	if (index >= 0 && tab->IsModified() && ui.Tabs->tabText(index).endsWith('*')) {
-		ui.Tabs->setTabText(index, ui.Tabs->tabText(index).chopped(1));
+	const auto tabIdx = ui.Tabs->indexOf(tab);
+	if (tabIdx >= 0 && tab->IsModified() && ui.Tabs->tabText(tabIdx).endsWith('*')) {
+		ui.Tabs->setTabText(tabIdx, ui.Tabs->tabText(tabIdx).chopped(1));
 	}
 }
 
@@ -263,6 +321,7 @@ void HxNxToolkit::NewWorkspaceTriggered()
 	NewTab();
 	workspaceModified = false;
 	UpdateWindowTitle();
+	undoManager->Reset();
 }
 
 void HxNxToolkit::SaveWorkspaceTriggered()
@@ -398,6 +457,9 @@ bool HxNxToolkit::SaveWorkspaceToPath(const QString& savePath)
 	Settings::Set(Option::LastSaveDir, QFileInfo(savePath).absolutePath());
 	Settings::Set(Option::LastSavedWorkspacePath, savePath);
 	UpdateWindowTitle();
+	if (undoManager) {
+		undoManager->SetClean();
+	}
 	return true;
 }
 
@@ -481,6 +543,9 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 	Settings::Set(Option::LastSaveDir, QFileInfo(loadPath).absolutePath());
 	Settings::Set(Option::LastSavedWorkspacePath, loadPath);
 	UpdateWindowTitle();
+	if (undoManager) {
+		undoManager->Reset();
+	}
 	return true;
 }
 
@@ -493,6 +558,40 @@ void HxNxToolkit::SetTabTitle(int tabIdx, const QString& newTitle)
 	ui.Tabs->setTabText(tabIdx, newTitle);
 	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(tabIdx));
 	tab->Modify();
+}
+
+void HxNxToolkit::RestoreClosedTab(const QJsonObject& state, int tabIdx)
+{
+	auto tab = NewTab();
+	ui.Tabs->removeTab(ui.Tabs->indexOf(tab));
+	tabIdx = std::clamp(tabIdx, 0, ui.Tabs->count());
+	ui.Tabs->insertTab(tabIdx, tab, state["Title"].toString());
+	ui.Tabs->setCurrentWidget(tab);
+	tab->LoadState(state);
+
+	if (state["Modified"].toBool()) {
+		tab->Modify();
+	}
+	undoManager->RegisterTab(tab);
+
+	workspaceModified = true;
+	UpdateWindowTitle();
+}
+
+void HxNxToolkit::UndoCleanStateChanged(bool clean)
+{
+	workspaceModified = !clean;
+
+	if (clean) {
+		for (int tabIdx = 0; tabIdx < ui.Tabs->count(); ++tabIdx) {
+			auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(tabIdx));
+			if (tab) {
+				tab->MarkSaved();
+			}
+		}
+	}
+
+	UpdateWindowTitle();
 }
 
 bool HxNxToolkit::ConfirmWorkspaceReplacement()
@@ -508,17 +607,6 @@ bool HxNxToolkit::ConfirmWorkspaceReplacement()
 	return result == QMessageBox::No || SaveWorkspace();
 }
 
-bool HxNxToolkit::HasModifiedTabs() const
-{
-	for (int index = 0; index < ui.Tabs->count(); ++index) {
-		auto* tab = dynamic_cast<Tab*>(ui.Tabs->widget(index));
-		if (tab && tab->IsModified()) {
-			return true;
-		}
-	}
-	return false;
-}
-
 void HxNxToolkit::ClearTabs()
 {
 	while (ui.Tabs->count() > 0) {
@@ -530,7 +618,7 @@ void HxNxToolkit::ClearTabs()
 
 void HxNxToolkit::UpdateWindowTitle()
 {
-	setWindowTitle(QString("HxNxToolkit - %1%2").arg(workspaceName, HasModifiedTabs() ? " *" : ""));
+	setWindowTitle(QString("HxNxToolkit - %1%2").arg(workspaceName, workspaceModified ? " *" : ""));
 }
 
 void HxNxToolkit::Quit()

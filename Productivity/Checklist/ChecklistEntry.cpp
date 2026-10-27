@@ -31,7 +31,9 @@ QString ChecklistEntry::GetDescription() const
 
 void ChecklistEntry::OnDeletePressed()
 {
-	this->deleteLater();
+	setParent(nullptr);
+	emit Deleted();
+	deleteLater();
 }
 
 void ChecklistEntry::OnCheckboxValueChange(bool value)
