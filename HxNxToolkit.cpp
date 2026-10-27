@@ -22,6 +22,7 @@
 #include <QTabBar>
 #include <QInputDialog>
 #include <QFileInfo>
+#include <QPainter>
 
 #include <algorithm>
 
@@ -48,11 +49,22 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 	trayIcon->show();
 	trayIcon->setContextMenu(trayMenu);
 	connect(trayIcon, &QSystemTrayIcon::activated, this, &HxNxToolkit::IconActivated);
+	connect(trayIcon, &QSystemTrayIcon::messageClicked, this, &HxNxToolkit::NotificationClicked);
+	connect(qApp, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
+		if (state == Qt::ApplicationActive) {
+			trayIcon->setIcon(windowIcon());
+		}
+	});
 
 	ui.ActionAlwaysOnTop->setChecked(Settings::GetBool(Option::AlwaysOnTop));
 
 	ui.Tabs->tabBar()->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
 	connect(ui.Tabs->tabBar(), &QWidget::customContextMenuRequested, this, &HxNxToolkit::TabContextMenuRequested);
+	connect(ui.Tabs, &QTabWidget::currentChanged, this, [this](int tabIdx) {
+		if (tabIdx >= 0) {
+			ui.Tabs->setTabIcon(tabIdx, {});
+		}
+	});
 
 	auto launchArgs = QApplication::arguments();
 
@@ -87,6 +99,15 @@ void HxNxToolkit::IconActivated(QSystemTrayIcon::ActivationReason reason)
 		setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
 		activateWindow();
 	}
+}
+
+void HxNxToolkit::NotificationClicked()
+{
+	show();
+	setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+	raise();
+	activateWindow();
+	trayIcon->setIcon(windowIcon());
 }
 
 void HxNxToolkit::LoadComponent(ToolType componentType, const QJsonObject& state)
@@ -126,6 +147,41 @@ void HxNxToolkit::SaveCurrentWorkspace()
 	if (workspaceModified) {
 		SaveWorkspace();
 	}
+}
+
+void HxNxToolkit::ShowNotification(Component* component, const QString& title, const QString& message)
+{
+	auto widget = component->parentWidget();
+	while (widget) {
+		if (auto tab = dynamic_cast<Tab*>(widget)) {
+			const auto tabIdx = ui.Tabs->indexOf(tab);
+			if (tabIdx >= 0 && tabIdx != ui.Tabs->currentIndex()) {
+				auto tabIcon = QPixmap(10, 10);
+				tabIcon.fill(Qt::transparent);
+				QPainter painter(&tabIcon);
+				painter.setPen(Qt::NoPen);
+				painter.setBrush(Qt::red);
+				painter.drawEllipse(0, 0, tabIcon.width(), tabIcon.height());
+				painter.end();
+				ui.Tabs->setTabIcon(tabIdx, tabIcon);
+			}
+
+			break;
+		}
+
+		widget = widget->parentWidget();
+	}
+
+	if (QApplication::applicationState() != Qt::ApplicationActive) {
+		auto icon = windowIcon().pixmap(32, 32);
+		QPainter painter(&icon);
+		painter.setPen(Qt::NoPen);
+		painter.setBrush(Qt::red);
+		painter.drawEllipse(icon.width() - 12, icon.height() - 12, 10, 10);
+		trayIcon->setIcon(icon);
+	}
+
+	trayIcon->showMessage(title, message, QSystemTrayIcon::Information);
 }
 
 void HxNxToolkit::NewTabTriggered()
