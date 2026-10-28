@@ -25,6 +25,7 @@ public:
 	QString GetTitle() const;
 	ComponentContainer* GetContainer() const;
 	virtual QList<ToolConfigurationParameter*> GetConfigurationParameters() const;
+	virtual void OnPopOut();
 
 	virtual QJsonObject SaveState();
 	virtual void LoadState(const QJsonObject& state);

@@ -265,6 +265,7 @@ void ComponentContainer::PopOut(bool independent)
 	window->show();
 	window->installEventFilter(this);
 	expandedWindowSize = {};
+	component->OnPopOut();
 
 	emit WorkspaceLayoutChanged(workspaceRow, false);
 }

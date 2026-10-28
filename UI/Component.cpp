@@ -39,6 +39,10 @@ QList<ToolConfigurationParameter*> Component::GetConfigurationParameters() const
 	return {};
 }
 
+void Component::OnPopOut()
+{
+}
+
 QJsonObject Component::SaveState()
 {
 	QJsonObject state;
