@@ -78,21 +78,27 @@ if(WIN32)
     endif()
 endif()
 
-set(QLEMENTINE_COMBOBOX_PATCH "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/patches/qlementine-combobox-fix.patch")
-set(QLEMENTINE_COMBOBOX_FILTER "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp")
-file(READ "${QLEMENTINE_COMBOBOX_FILTER}" qlementineComboboxFilter)
-string(FIND "${qlementineComboboxFilter}" "_isResolvingView" qlementineComboboxPatchIdx)
-if(qlementineComboboxPatchIdx EQUAL -1)
+foreach(qlementinePatchName qlementine-combobox-fix.patch qlementine-focus-frame-lifetime.patch)
+    set(qlementinePatch "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/patches/${qlementinePatchName}")
     execute_process(
-        COMMAND "${GIT_EXECUTABLE}" apply "${QLEMENTINE_COMBOBOX_PATCH}"
+        COMMAND "${GIT_EXECUTABLE}" apply --reverse --check "${qlementinePatch}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine"
-        RESULT_VARIABLE qlementinePatchResult
-        ERROR_VARIABLE qlementinePatchError
+        RESULT_VARIABLE qlementinePatchApplied
+        OUTPUT_QUIET
+        ERROR_QUIET
     )
-    if(NOT qlementinePatchResult EQUAL 0)
-        message(FATAL_ERROR "Failed to apply Qlementine combobox patch: ${qlementinePatchError}")
+    if(NOT qlementinePatchApplied EQUAL 0)
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" apply "${qlementinePatch}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine"
+            RESULT_VARIABLE qlementinePatchResult
+            ERROR_VARIABLE qlementinePatchError
+        )
+        if(NOT qlementinePatchResult EQUAL 0)
+            message(FATAL_ERROR "Failed to apply ${qlementinePatchName}: ${qlementinePatchError}")
+        endif()
     endif()
-endif()
+endforeach()
 
 add_subdirectory(3rdParty/qlementine)
 
