@@ -12,6 +12,11 @@ Calculator::Calculator(QWidget *parent)
 Calculator::~Calculator()
 {}
 
+void Calculator::OnPopOut()
+{
+	ui.InputField->setFocus();
+}
+
 QJsonObject Calculator::SaveState()
 {
 	auto state = Component::SaveState();

@@ -13,6 +13,7 @@ public:
 	Calculator(QWidget *parent = nullptr);
 	~Calculator();
 
+	void OnPopOut() override;
 	virtual QJsonObject SaveState() override;
 	virtual void LoadState(const QJsonObject& state) override;
 
