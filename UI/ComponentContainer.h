@@ -21,6 +21,8 @@ public:
 	void setTitle(const QString& title);
 	QString getTitle();
 	void setFillContainer(bool fill);
+	void setFrameMargins(int left, int top, int right, int bottom);
+	void setCollapseEnabled(bool enabled);
 	bool getCollapsed() const;
 	Component* GetComponent() const;
 	void ShowPopoutAt(const QPoint& position);
@@ -55,6 +57,8 @@ private:
 	QSize popoutSize;
 	QSize expandedWindowSize;
 	QPoint titleDragOffset;
+	QPoint componentDragStart;
 	int workspacePosition{};
 	bool titleDragging{};
+	bool componentDragPending{};
 };

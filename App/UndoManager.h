@@ -12,6 +12,7 @@
 
 class Component;
 class ComponentContainer;
+class DynamicTabWidget;
 class QWidget;
 
 class UndoManager : public QObject
@@ -30,6 +31,7 @@ public:
 	void AttachComponent(Tab* tab, ComponentContainer* container, const Tab::ComponentLocation& location);
 	Tab::ComponentLocation DetachComponent(Tab* tab, ComponentContainer* container);
 	void AddClosedTab(const QJsonObject& state, int tabIdx);
+	void SetTabPinned(DynamicTabWidget* tabs, QWidget* page, bool pinned);
 	void MarkDirty();
 	void Reset();
 	void SetClean();

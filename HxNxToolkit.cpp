@@ -419,18 +419,15 @@ void HxNxToolkit::TabContextMenuRequested(const QPoint& pos)
 
 	connect(menu.addAction(ui.Tabs->GetTabPinned(tabIdx) ? "Unpin" : "Pin"), &QAction::triggered,
 		this, [this, tabIdx] { TabPinTriggered(tabIdx); });
-	connect(menu.addAction("Rename"), &QAction::triggered, this, [=] { TabRenameTriggered(tabIdx); });
+	connect(menu.addAction("Rename"), &QAction::triggered, this, [this, tabIdx] { TabRenameTriggered(tabIdx); });
 
 	menu.exec(tabBar->mapToGlobal(pos));
 }
 
 void HxNxToolkit::TabPinTriggered(int tabIdx)
 {
-	ui.Tabs->SetTabPinned(tabIdx, !ui.Tabs->GetTabPinned(tabIdx));
-	workspace->SetModified(true);
-	UpdateWindowTitle();
 	if (undoManager) {
-		undoManager->MarkDirty();
+		undoManager->SetTabPinned(ui.Tabs, ui.Tabs->GetWidget(tabIdx), !ui.Tabs->GetTabPinned(tabIdx));
 	}
 }
 

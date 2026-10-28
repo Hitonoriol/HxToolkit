@@ -2,6 +2,7 @@
 
 #include "ComponentPresenceCommand.h"
 #include "ComponentStateCommand.h"
+#include "TabPinCommand.h"
 #include "UI/Component.h"
 #include "UI/ComponentContainer.h"
 
@@ -118,6 +119,13 @@ void UndoManager::AddClosedTab(const QJsonObject& state, int tabIdx)
 	}
 
 	MarkDirty();
+}
+
+void UndoManager::SetTabPinned(DynamicTabWidget* tabs, QWidget* page, bool pinned)
+{
+	if (!applyingState && tabs && page) {
+		undoStack.push(new TabPinCommand(tabs, page, pinned));
+	}
 }
 
 void UndoManager::MarkDirty()
