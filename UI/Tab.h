@@ -46,6 +46,8 @@ signals:
 
 	void ComponentAdded(Tab* tab, ComponentContainer* container, const ComponentLocation& location);
 	void ComponentRemoved(Tab* tab, ComponentContainer* container, const ComponentLocation& location);
+	void ComponentAttached(Tab* tab, Component* component);
+	void ComponentDetached(Component* component);
 	void TabModified(Tab* tab, Component* component, bool undoable);
 	void TabSaved(Tab* tab);
 

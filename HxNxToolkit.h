@@ -12,6 +12,7 @@
 class Tab;
 class Component;
 class UndoManager;
+class Workspace;
 
 class HxNxToolkit : public QMainWindow
 {
@@ -23,6 +24,8 @@ public:
 
 	Tab* NewTab();
 	Tab* GetCurrentTab();
+	Workspace* GetWorkspace() const;
+	void ShowComponent(Component* component);
 	void SaveCurrentWorkspace();
 	void ShowNotification(Component* component, const QString& title, const QString& message);
 
@@ -75,10 +78,8 @@ private:
 	QSystemTrayIcon* trayIcon;
 	QMenu* trayMenu;
 	UndoManager* undoManager{};
+	Workspace* workspace;
 
 	QTimer autosaveTimer;
-	QString workspacePath;
-	QString workspaceName{"Untitled Workspace"};
-	bool workspaceModified{};
 	bool quitting{};
 };

@@ -2,8 +2,11 @@
 
 #include <QIcon>
 #include <QList>
+#include <QPoint>
 #include <QString>
 #include <qt_windows.h>
+
+#include <optional>
 
 namespace WindowsHelper
 {
@@ -15,6 +18,7 @@ struct WindowInfo
 };
 
 QList<WindowInfo> GetWindows();
+std::optional<QPoint> GetTextCursorPosition();
 bool IsSelectableWindow(HWND window);
 bool IsAlwaysOnTop(HWND window);
 bool SetAlwaysOnTop(HWND window, bool alwaysOnTop);

@@ -9,6 +9,7 @@
 
 #include <map>
 #include <functional>
+#include <optional>
 
 using NamedComponentSupplier = std::function<Component*(HxNxToolkit*, const QString& name)>;
 using ComponentSupplier = std::function<Component* (HxNxToolkit*)>;
@@ -19,9 +20,11 @@ struct ComponentSupplierEntry
 	QString ToolName;
 	QString IconPath;
 	ComponentSupplier Supplier;
+	bool WorkspaceWide;
 
-	ComponentSupplierEntry(const QString& CategoryName, const QString& ToolName, const QString& IconPath, NamedComponentSupplier Supplier)
-		: CategoryName(CategoryName), ToolName(ToolName), IconPath(IconPath)
+	ComponentSupplierEntry(const QString& CategoryName, const QString& ToolName, const QString& IconPath,
+		NamedComponentSupplier Supplier, bool workspaceWide = false)
+		: CategoryName(CategoryName), ToolName(ToolName), IconPath(IconPath), WorkspaceWide(workspaceWide)
 	{
 		this->Supplier = [ToolName, Supplier](HxNxToolkit* toolkit) {
 			return Supplier(toolkit, ToolName);
@@ -41,6 +44,7 @@ class ComponentFactory
 {
 public:
 	static QList<ToolInfo> AvailableTools();
+	static std::optional<ToolInfo> GetToolInfo(ToolType toolType);
 	static Component* CreateComponent(HxNxToolkit* toolkit, ToolType toolType);
 
 private:

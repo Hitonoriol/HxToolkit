@@ -23,6 +23,7 @@ public:
 	void setFillContainer(bool fill);
 	bool getCollapsed() const;
 	Component* GetComponent() const;
+	void ShowPopoutAt(const QPoint& position);
 
 signals:
 	void CloseClicked();
@@ -39,7 +40,7 @@ private slots:
 
 private:
 	bool eventFilter(QObject* watched, QEvent* event) override;
-	void PopOut();
+	void PopOut(bool independent = false);
 	void RestoreToWorkspace();
 	void UpdateCollapseButton();
 	void UpdatePopoutSize(bool collapsed);

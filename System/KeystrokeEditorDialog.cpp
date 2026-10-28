@@ -11,7 +11,7 @@
 KeystrokeEditorDialog::KeystrokeEditorDialog(const KeystrokeListener::Chord& chord, QWidget* parent)
 	: QDialog(parent)
 {
-	setWindowTitle("Set panic shortcut");
+	setWindowTitle("Set shortcut");
 	auto layout = new QVBoxLayout(this);
 	strokeLayout = new QVBoxLayout;
 	layout->addLayout(strokeLayout);

@@ -5,10 +5,14 @@
 #include <QMenu>
 #include <QInputDialog>
 #include <QIcon>
+#include <QGuiApplication>
 #include <QMouseEvent>
+#include <QScreen>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+#include <algorithm>
 
 ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 	: QWidget(parent)
@@ -113,6 +117,43 @@ Component* ComponentContainer::GetComponent() const
 	return component;
 }
 
+void ComponentContainer::ShowPopoutAt(const QPoint& position)
+{
+	if (!popoutWindow) {
+		PopOut(true);
+	}
+
+	if (popoutWindow) {
+		auto screen = QGuiApplication::screenAt(position);
+		if (!screen) {
+			screen = QGuiApplication::primaryScreen();
+		}
+
+		auto windowSize = popoutWindow->size();
+		if (screen) {
+			auto available = screen->availableGeometry();
+			windowSize.setWidth(std::min(windowSize.width(), available.width()));
+			windowSize.setHeight(std::min(windowSize.height(), available.height()));
+			if (windowSize != popoutWindow->size()) {
+				popoutWindow->resize(windowSize);
+			}
+
+			auto windowPosition = position - QPoint(windowSize.width() / 2, windowSize.height() / 2);
+			int maximumX = available.right() - windowSize.width() + 1;
+			int maximumY = available.bottom() - windowSize.height() + 1;
+			windowPosition.setX(std::clamp(windowPosition.x(), available.left(), maximumX));
+			windowPosition.setY(std::clamp(windowPosition.y(), available.top(), maximumY));
+			popoutWindow->move(windowPosition);
+		} else {
+			popoutWindow->move(position - QPoint(windowSize.width() / 2, windowSize.height() / 2));
+		}
+
+		popoutWindow->show();
+		popoutWindow->raise();
+		popoutWindow->activateWindow();
+	}
+}
+
 bool ComponentContainer::eventFilter(QObject* watched, QEvent* event)
 {
 	if (watched == popoutWindow && event->type() == QEvent::Close) {
@@ -164,7 +205,7 @@ bool ComponentContainer::eventFilter(QObject* watched, QEvent* event)
 
 	return QWidget::eventFilter(watched, event);
 }
-void ComponentContainer::PopOut()
+void ComponentContainer::PopOut(bool independent)
 {
 	if (popoutWindow) {
 		return;
@@ -181,8 +222,11 @@ void ComponentContainer::PopOut()
 	workspacePlaceholder->hide();
 	workspaceLayout->insertWidget(workspacePosition, workspacePlaceholder);
 
-	auto window = new ComponentPopoutWindow(workspaceRow);
+	auto window = new ComponentPopoutWindow(independent ? nullptr : workspaceRow.data());
 	popoutWindow = window;
+	if (independent) {
+		connect(workspaceRow, &QObject::destroyed, window, &QObject::deleteLater);
+	}
 	window->setWindowTitle(getTitle());
 	window->installEventFilter(this);
 	auto windowLayout = new QVBoxLayout(window);

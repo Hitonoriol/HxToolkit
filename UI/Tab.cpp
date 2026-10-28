@@ -70,6 +70,7 @@ void Tab::AddComponent(Component* component, const QString& title, bool fillCont
 		}
 	});
 
+	emit ComponentAttached(this, component);
 	emit ComponentAdded(this, container, GetComponentLocation(container));
 }
 
@@ -96,11 +97,13 @@ void Tab::AttachComponent(ComponentContainer* container, const ComponentLocation
 	assert(rowLayout);
 	rowLayout->insertWidget(std::clamp(location.Column, 0, rowLayout->count()), container, 1);
 	UpdateRowStretch(row);
+	emit ComponentAttached(this, container->GetComponent());
 }
 
 Tab::ComponentLocation Tab::DetachComponent(ComponentContainer* container)
 {
 	auto location = GetComponentLocation(container);
+	auto component = container->GetComponent();
 	auto row = container->parentWidget();
 	row->layout()->removeWidget(container);
 	container->setParent(nullptr);
@@ -112,6 +115,7 @@ Tab::ComponentLocation Tab::DetachComponent(ComponentContainer* container)
 		UpdateRowStretch(row);
 	}
 
+	emit ComponentDetached(component);
 	return location;
 }
 

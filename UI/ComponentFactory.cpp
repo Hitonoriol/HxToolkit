@@ -1,5 +1,7 @@
 #include "ComponentFactory.h"
 
+#include "App/Workspace.h"
+
 #include "General/BaseConverter.h"
 #include "General/Calculator.h"
 #include "General/ColorPicker.h"
@@ -26,6 +28,7 @@
 #include "System/RamMonitor.h"
 #include "System/ClipboardHistory.h"
 #include "System/SystemShortcuts.h"
+#include "System/QuickMenu.h"
 #ifdef _WIN32
 #include "System/AlwaysOnTop.h"
 #include "System/WindowBox.h"
@@ -115,6 +118,16 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::RamMonitor, {"System", "RAM monitor", ":/icons/memory.svg", DefaultSupplier<RamMonitor>(false)}},
 	{ToolType::ClipboardManager, {"System", "Clipboard history", ":/icons/clipboard.svg", DefaultSupplier<ClipboardHistory>()}},
 	{ToolType::SystemShortcuts, {"System", "System Shortcuts", ":/icons/keyboard.svg", DefaultSupplier<SystemShortcuts>(false)}},
+	{ToolType::QuickMenu, {"System", "Quick Menu", ":/icons/keyboard.svg", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
+		auto quickMenu = new QuickMenu(toolkit->GetWorkspace());
+		auto tab = toolkit->GetCurrentTab();
+		if (!tab) {
+			tab = toolkit->NewTab();
+		}
+
+		tab->AddComponent(quickMenu, name, true);
+		return quickMenu;
+	}, true}},
 #ifdef _WIN32
 	{ToolType::WindowBox, {"System", "Window Box", ":/icons/window-box.svg", DefaultSupplier<WindowBox>()}},
 	{ToolType::AlwaysOnTop, {"System", "Always on top", ":/icons/tool-move-up.svg", DefaultSupplier<AlwaysOnTop>()}}
@@ -130,11 +143,28 @@ QList<ToolInfo> ComponentFactory::AvailableTools()
 	return tools;
 }
 
+std::optional<ToolInfo> ComponentFactory::GetToolInfo(ToolType toolType)
+{
+	auto supplierIt = componentSuppliers.find(toolType);
+	if (supplierIt == componentSuppliers.end()) {
+		return std::nullopt;
+	}
+
+	const auto& entry = supplierIt->second;
+	return ToolInfo{toolType, entry.CategoryName, entry.ToolName, entry.IconPath};
+}
+
 Component* ComponentFactory::CreateComponent(HxNxToolkit* toolkit, ToolType toolType)
 {
 	auto supplierIt = componentSuppliers.find(toolType);
 	if (supplierIt == componentSuppliers.end()) {
 		return {};
+	}
+	if (supplierIt->second.WorkspaceWide) {
+		if (auto existing = toolkit->GetWorkspace()->FindComponent(toolType)) {
+			toolkit->ShowComponent(existing);
+			return existing;
+		}
 	}
 
 	return supplierIt->second.Supplier(toolkit);
