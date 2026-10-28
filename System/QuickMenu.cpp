@@ -34,6 +34,7 @@ QuickMenu::QuickMenu(Workspace* workspace, QWidget* parent)
 	, shortcutConfiguration(new ToolConfigurationParameter("Shortcut", [this](QWidget* parent) { return EditShortcut(parent); }, this))
 {
 	auto layout = new QVBoxLayout(this);
+	layout->setContentsMargins(0, 0, 0, 0);
 	auto description = new QLabel("Choose which workspace components appear in the quick menu.", this);
 	description->setWordWrap(true);
 	layout->addWidget(description);

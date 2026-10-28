@@ -3,11 +3,15 @@
 #include "ToolConfigurationParameter.h"
 
 #include <QMenu>
+#include <QApplication>
+#include <QDrag>
 #include <QInputDialog>
 #include <QIcon>
 #include <QGuiApplication>
 #include <QMouseEvent>
+#include <QMimeData>
 #include <QScreen>
+#include <QSplitter>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -117,6 +121,22 @@ void ComponentContainer::setFillContainer(bool fill)
 	}
 }
 
+void ComponentContainer::setFrameMargins(int left, int top, int right, int bottom)
+{
+	ui.verticalLayout->setContentsMargins(left, top, right, bottom);
+}
+
+void ComponentContainer::setCollapseEnabled(bool enabled)
+{
+	ui.CollapseBtn->setEnabled(enabled);
+	if (!enabled && getCollapsed()) {
+		ui.Content->show();
+		UpdateCollapseButton();
+		UpdatePopoutSize(false);
+		emit CollapseClicked(false);
+	}
+}
+
 bool ComponentContainer::getCollapsed() const
 {
 	return ui.Content->isHidden();
@@ -208,6 +228,24 @@ bool ComponentContainer::eventFilter(QObject* watched, QEvent* event)
 		return true;
 	}
 
+	if (event->type() == QEvent::MouseButtonPress && mouseEvent->button() == Qt::LeftButton) {
+		componentDragStart = mouseEvent->position().toPoint();
+		componentDragPending = true;
+		return true;
+	}
+
+	if (event->type() == QEvent::MouseMove && componentDragPending
+		&& mouseEvent->buttons().testFlag(Qt::LeftButton)
+		&& (mouseEvent->position().toPoint() - componentDragStart).manhattanLength() >= QApplication::startDragDistance()) {
+		componentDragPending = false;
+		auto drag = new QDrag(this);
+		auto mimeData = new QMimeData;
+		mimeData->setData("application/x-hx-component", {});
+		drag->setMimeData(mimeData);
+		drag->exec(Qt::MoveAction);
+		return true;
+	}
+
 	if (event->type() == QEvent::MouseMove && titleDragging && popoutWindow
 		&& mouseEvent->buttons().testFlag(Qt::LeftButton)) {
 		popoutWindow->move(mouseEvent->globalPosition().toPoint() - titleDragOffset);
@@ -216,6 +254,7 @@ bool ComponentContainer::eventFilter(QObject* watched, QEvent* event)
 
 	if (event->type() == QEvent::MouseButtonRelease && mouseEvent->button() == Qt::LeftButton) {
 		titleDragging = false;
+		componentDragPending = false;
 		return true;
 	}
 
@@ -228,9 +267,11 @@ void ComponentContainer::PopOut(bool independent)
 	}
 
 	workspaceRow = parentWidget();
+	setFrameMargins(5, 5, 5, 5);
 	auto workspaceLayout = dynamic_cast<QBoxLayout*>(workspaceRow->layout());
-	assert(workspaceLayout);
-	workspacePosition = workspaceLayout->indexOf(this);
+	auto workspaceSplitter = qobject_cast<QSplitter*>(workspaceRow);
+	assert(workspaceLayout || workspaceSplitter);
+	workspacePosition = workspaceLayout ? workspaceLayout->indexOf(this) : workspaceSplitter->indexOf(this);
 	auto windowPosition = mapToGlobal(QPoint{});
 	auto windowSize = popoutSize;
 	if (!windowSize.isValid()) {
@@ -246,10 +287,17 @@ void ComponentContainer::PopOut(bool independent)
 		popoutSize = windowSize;
 	}
 
-	workspaceLayout->removeWidget(this);
-	workspacePlaceholder = new QWidget(workspaceRow);
+	if (workspaceLayout) {
+		workspaceLayout->removeWidget(this);
+	}
+
+	workspacePlaceholder = new QWidget;
 	workspacePlaceholder->hide();
-	workspaceLayout->insertWidget(workspacePosition, workspacePlaceholder);
+	if (workspaceLayout) {
+		workspaceLayout->insertWidget(workspacePosition, workspacePlaceholder);
+	} else {
+		workspaceSplitter->insertWidget(workspacePosition, workspacePlaceholder);
+	}
 
 	auto window = new ComponentPopoutWindow(independent ? nullptr : workspaceRow.data());
 	popoutWindow = window;
@@ -288,12 +336,22 @@ void ComponentContainer::RestoreToWorkspace()
 	popoutWindow = {};
 	titleDragging = false;
 	auto workspaceLayout = dynamic_cast<QBoxLayout*>(workspaceRow->layout());
-	assert(workspaceLayout);
-	workspacePosition = workspaceLayout->indexOf(workspacePlaceholder);
-	workspaceLayout->removeWidget(workspacePlaceholder);
+	auto workspaceSplitter = qobject_cast<QSplitter*>(workspaceRow);
+	assert(workspaceLayout || workspaceSplitter);
+	workspacePosition = workspaceLayout ? workspaceLayout->indexOf(workspacePlaceholder)
+		: workspaceSplitter->indexOf(workspacePlaceholder);
+	if (workspaceLayout) {
+		workspaceLayout->removeWidget(workspacePlaceholder);
+	}
+
+	workspacePlaceholder->setParent(nullptr);
 	workspacePlaceholder->deleteLater();
 	workspacePlaceholder = {};
-	workspaceLayout->insertWidget(workspacePosition, this, 1);
+	if (workspaceLayout) {
+		workspaceLayout->insertWidget(workspacePosition, this, 1);
+	} else {
+		workspaceSplitter->insertWidget(workspacePosition, this);
+	}
 	show();
 	window->hide();
 	window->deleteLater();
