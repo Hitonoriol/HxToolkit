@@ -42,6 +42,8 @@ RSSFeed::RSSFeed(QWidget* parent)
 	};
 
 	connect(&updateTimer, &QTimer::timeout, this, &RSSFeed::FetchFeed);
+	connect(&elapsedTimeTimer, &QTimer::timeout, this, &RSSFeed::UpdateElapsedTimes);
+	elapsedTimeTimer.start(std::chrono::seconds{10});
 }
 
 QList<ToolConfigurationParameter*> RSSFeed::GetConfigurationParameters() const
@@ -221,6 +223,7 @@ QList<RSSFeed::Entry> RSSFeed::ParseFeed(const QByteArray& data, QString& parsed
 
 void RSSFeed::RefreshEntries(const QList<Entry>& entries)
 {
+	dateLabels.clear();
 	while (auto item = entriesLayout->takeAt(0)) {
 		if (item->widget()) {
 			item->widget()->deleteLater();
@@ -248,12 +251,15 @@ void RSSFeed::RefreshEntries(const QList<Entry>& entries)
 				dateTime = QDateTime::fromString(entry.date, Qt::RFC2822Date);
 			}
 			if (dateTime.isValid()) {
-				dateText = dateTime.toLocalTime().toString("d MMM yyyy, HH:mm");
+				dateText = GetDateText(dateTime);
 			}
 
 			auto date = new QLabel(dateText, card);
 			date->setStyleSheet("color: palette(window-text); font-size: 11px;");
 			cardLayout->addWidget(date);
+			if (dateTime.isValid()) {
+				dateLabels.append({date, dateTime});
+			}
 		}
 
 		auto title = new QLabel(card);
@@ -284,6 +290,69 @@ void RSSFeed::RefreshEntries(const QList<Entry>& entries)
 	statusLabel = new QLabel(this);
 	statusLabel->hide();
 	entriesLayout->addWidget(statusLabel);
+}
+
+QString RSSFeed::GetDateText(const QDateTime& dateTime)
+{
+	return QString("%1 (%2 ago)")
+		.arg(dateTime.toLocalTime().toString("d MMM yyyy, HH:mm"), GetElapsedTimeText(dateTime));
+}
+
+QString RSSFeed::GetElapsedTimeText(const QDateTime& dateTime)
+{
+	auto published = dateTime.toUTC();
+	auto now = QDateTime::currentDateTimeUtc();
+	if (published >= now) {
+		return "0 seconds";
+	}
+
+	int months = (now.date().year() - published.date().year()) * 12
+		+ now.date().month() - published.date().month();
+	auto remainderStart = published.addMonths(months);
+	if (remainderStart > now) {
+		--months;
+		remainderStart = published.addMonths(months);
+	}
+
+	auto remainingSeconds = remainderStart.secsTo(now);
+	int days = static_cast<int>(remainingSeconds / 86'400);
+	remainingSeconds %= 86'400;
+	int hours = static_cast<int>(remainingSeconds / 3'600);
+	remainingSeconds %= 3'600;
+	int minutes = static_cast<int>(remainingSeconds / 60);
+	int seconds = static_cast<int>(remainingSeconds % 60);
+
+	QStringList parts;
+	if (months > 0) {
+		parts.append(QString("%1 month%2").arg(months).arg(months == 1 ? "" : "s"));
+	}
+
+	if (days > 0) {
+		parts.append(QString("%1 day%2").arg(days).arg(days == 1 ? "" : "s"));
+	}
+
+	if (hours > 0) {
+		parts.append(QString("%1 hour%2").arg(hours).arg(hours == 1 ? "" : "s"));
+	}
+
+	if (minutes > 0) {
+		parts.append(QString("%1 minute%2").arg(minutes).arg(minutes == 1 ? "" : "s"));
+	}
+
+	if (seconds > 0) {
+		parts.append(QString("%1 second%2").arg(seconds).arg(seconds == 1 ? "" : "s"));
+	}
+
+	return parts.isEmpty() ? QString("0 seconds") : parts.join(' ');
+}
+
+void RSSFeed::UpdateElapsedTimes()
+{
+	for (const auto& dateLabel : dateLabels) {
+		if (dateLabel.label) {
+			dateLabel.label->setText(GetDateText(dateLabel.dateTime));
+		}
+	}
 }
 
 void RSSFeed::UpdateSchedule()
