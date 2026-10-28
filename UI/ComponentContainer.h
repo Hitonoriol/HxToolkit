@@ -42,6 +42,7 @@ private:
 	bool eventFilter(QObject* watched, QEvent* event) override;
 	void PopOut(bool independent = false);
 	void RestoreToWorkspace();
+	QSize GetCurrentPopoutSize() const;
 	void UpdateCollapseButton();
 	void UpdatePopoutSize(bool collapsed);
 	void PopulateConfigurationMenu();
@@ -51,6 +52,7 @@ private:
 	QPointer<QWidget> popoutWindow;
 	QPointer<QWidget> workspaceRow;
 	QPointer<QWidget> workspacePlaceholder;
+	QSize popoutSize;
 	QSize expandedWindowSize;
 	QPoint titleDragOffset;
 	int workspacePosition{};

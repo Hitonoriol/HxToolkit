@@ -68,6 +68,11 @@ QJsonObject ComponentContainer::SaveState()
 	QJsonObject state;
 
 	state["Title"] = getTitle();
+	auto currentPopoutSize = GetCurrentPopoutSize();
+	if (currentPopoutSize.isValid()) {
+		state["PopoutWidth"] = currentPopoutSize.width();
+		state["PopoutHeight"] = currentPopoutSize.height();
+	}
 
 	return state;
 }
@@ -75,6 +80,11 @@ QJsonObject ComponentContainer::SaveState()
 void ComponentContainer::LoadState(const QJsonObject& state)
 {
 	setTitle(state["Title"].toString());
+	int popoutWidth = state["PopoutWidth"].toInt();
+	int popoutHeight = state["PopoutHeight"].toInt();
+	if (popoutWidth > 0 && popoutHeight > 0) {
+		popoutSize = QSize(popoutWidth, popoutHeight);
+	}
 }
 
 void ComponentContainer::setTitle(const QString& title)
@@ -162,6 +172,12 @@ bool ComponentContainer::eventFilter(QObject* watched, QEvent* event)
 		return true;
 	}
 
+	if (watched == popoutWindow && event->type() == QEvent::Resize
+		&& !getCollapsed() && !popoutWindow->isMaximized() && popoutSize != popoutWindow->size()) {
+		popoutSize = popoutWindow->size();
+		emit component->Modified(component, false);
+	}
+
 	if (watched != ui.Title && watched != ui.TitleLabel) {
 		return QWidget::eventFilter(watched, event);
 	}
@@ -216,7 +232,20 @@ void ComponentContainer::PopOut(bool independent)
 	assert(workspaceLayout);
 	workspacePosition = workspaceLayout->indexOf(this);
 	auto windowPosition = mapToGlobal(QPoint{});
-	auto windowSize = size();
+	auto windowSize = popoutSize;
+	if (!windowSize.isValid()) {
+		windowSize = sizeHint();
+		if (!windowSize.isValid()) {
+			windowSize = minimumSizeHint();
+		}
+
+		if (!windowSize.isValid()) {
+			windowSize = size();
+		}
+
+		popoutSize = windowSize;
+	}
+
 	workspaceLayout->removeWidget(this);
 	workspacePlaceholder = new QWidget(workspaceRow);
 	workspacePlaceholder->hide();
@@ -228,13 +257,13 @@ void ComponentContainer::PopOut(bool independent)
 		connect(workspaceRow, &QObject::destroyed, window, &QObject::deleteLater);
 	}
 	window->setWindowTitle(getTitle());
-	window->installEventFilter(this);
 	auto windowLayout = new QVBoxLayout(window);
 	windowLayout->setContentsMargins(0, 0, 0, 0);
 	windowLayout->addWidget(this);
 	window->resize(windowSize);
 	window->move(windowPosition);
 	window->show();
+	window->installEventFilter(this);
 	expandedWindowSize = {};
 
 	emit WorkspaceLayoutChanged(workspaceRow, false);
@@ -244,6 +273,12 @@ void ComponentContainer::RestoreToWorkspace()
 {
 	if (!popoutWindow || !workspaceRow) {
 		return;
+	}
+
+	auto currentPopoutSize = GetCurrentPopoutSize();
+	bool popoutSizeChanged = currentPopoutSize.isValid() && currentPopoutSize != popoutSize;
+	if (currentPopoutSize.isValid()) {
+		popoutSize = currentPopoutSize;
 	}
 
 	auto window = popoutWindow.data();
@@ -263,6 +298,26 @@ void ComponentContainer::RestoreToWorkspace()
 	window->deleteLater();
 
 	emit WorkspaceLayoutChanged(workspaceRow, true);
+	if (popoutSizeChanged) {
+		emit component->Modified(component, false);
+	}
+}
+
+QSize ComponentContainer::GetCurrentPopoutSize() const
+{
+	if (!popoutWindow) {
+		return popoutSize;
+	}
+
+	if (getCollapsed() && expandedWindowSize.isValid()) {
+		return QSize(popoutWindow->width(), expandedWindowSize.height());
+	}
+
+	if (popoutWindow->isMaximized() && popoutWindow->normalGeometry().isValid()) {
+		return popoutWindow->normalGeometry().size();
+	}
+
+	return popoutWindow->size();
 }
 
 void ComponentContainer::OnCloseClicked()
