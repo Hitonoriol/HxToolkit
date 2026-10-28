@@ -3,6 +3,7 @@
 #include "App/SettingsWindow.h"
 #include "App/UndoManager.h"
 #include "UI/Tab.h"
+#include "UI/DynamicTabWidget.h"
 #include "UI/ComponentContainer.h"
 #include "UI/AddToolDialog.h"
 #include "UI/ComponentFactory.h"
@@ -60,14 +61,15 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 
 	ui.ActionAlwaysOnTop->setChecked(Settings::GetBool(Option::AlwaysOnTop));
 
-	ui.Tabs->tabBar()->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
-	connect(ui.Tabs->tabBar(), &QWidget::customContextMenuRequested, this, &HxNxToolkit::TabContextMenuRequested);
-	connect(ui.Tabs, &QTabWidget::currentChanged, this, [this](int tabIdx) {
+	ui.Tabs->GetTabBar()->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
+	connect(ui.Tabs->GetTabBar(), &QWidget::customContextMenuRequested, this, &HxNxToolkit::TabContextMenuRequested);
+	connect(ui.Tabs, &DynamicTabWidget::AddTabRequested, ui.ActionNewTab, &QAction::trigger);
+	connect(ui.Tabs, &DynamicTabWidget::CurrentChanged, this, [this](int tabIdx) {
 		if (tabIdx >= 0) {
-			ui.Tabs->setTabIcon(tabIdx, {});
+			ui.Tabs->SetTabIcon(tabIdx, {});
 		}
 	});
-	connect(ui.Tabs->tabBar(), &QTabBar::tabMoved, this, [this] {
+	connect(ui.Tabs->GetTabBar(), &QTabBar::tabMoved, this, [this] {
 		workspaceModified = true;
 		UpdateWindowTitle();
 		if (undoManager) {
@@ -134,8 +136,8 @@ Tab* HxNxToolkit::NewTab()
 {
 	auto tab = new Tab;
 	auto title = Time::GetTimeString(QDateTime::currentDateTime());
-	ui.Tabs->addTab(tab, title);
-	ui.Tabs->setCurrentWidget(tab);
+	ui.Tabs->AddTab(tab, title);
+	ui.Tabs->SetCurrentWidget(tab);
 	connect(tab, &Tab::LoadComponent, this, &HxNxToolkit::LoadComponent);
 	connect(tab, &Tab::AddToolRequested, this, [this, tab] {
 		AddToolDialog dialog(ComponentFactory::AvailableTools(), tab->IsVerticalSplit(), this);
@@ -170,7 +172,7 @@ Tab* HxNxToolkit::NewTab()
 
 Tab* HxNxToolkit::GetCurrentTab()
 {
-	return dynamic_cast<Tab*>(ui.Tabs->currentWidget());
+	return dynamic_cast<Tab*>(ui.Tabs->GetCurrentWidget());
 }
 
 void HxNxToolkit::SaveCurrentWorkspace()
@@ -185,8 +187,8 @@ void HxNxToolkit::ShowNotification(Component* component, const QString& title, c
 	auto widget = component->parentWidget();
 	while (widget) {
 		if (auto tab = dynamic_cast<Tab*>(widget)) {
-			const auto tabIdx = ui.Tabs->indexOf(tab);
-			if (tabIdx >= 0 && tabIdx != ui.Tabs->currentIndex()) {
+			const auto tabIdx = ui.Tabs->GetIndexOf(tab);
+			if (tabIdx >= 0 && tabIdx != ui.Tabs->GetCurrentIndex()) {
 				auto tabIcon = QPixmap(10, 10);
 				tabIcon.fill(Qt::transparent);
 				QPainter painter(&tabIcon);
@@ -194,7 +196,7 @@ void HxNxToolkit::ShowNotification(Component* component, const QString& title, c
 				painter.setBrush(Qt::red);
 				painter.drawEllipse(0, 0, tabIcon.width(), tabIcon.height());
 				painter.end();
-				ui.Tabs->setTabIcon(tabIdx, tabIcon);
+				ui.Tabs->SetTabIcon(tabIdx, tabIcon);
 			}
 
 			break;
@@ -254,14 +256,14 @@ void HxNxToolkit::changeEvent(QEvent* event)
 
 void HxNxToolkit::OnTabClose(int idx)
 {
-	if (idx < 0 || idx >= ui.Tabs->count()) {
+	if (idx < 0 || idx >= ui.Tabs->GetCount()) {
 		return;
 	}
 
-	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(idx));
+	auto tab = dynamic_cast<Tab*>(ui.Tabs->GetWidget(idx));
 	if (undoManager && tab) {
 		auto state = tab->GetState();
-		auto title = ui.Tabs->tabText(idx);
+		auto title = ui.Tabs->GetTabText(idx);
 		if (title.endsWith('*')) {
 			title.chop(1);
 		}
@@ -270,7 +272,7 @@ void HxNxToolkit::OnTabClose(int idx)
 		undoManager->AddClosedTab(state, idx);
 	}
 
-	ui.Tabs->removeTab(idx);
+	ui.Tabs->RemoveTab(idx);
 	if (tab) {
 		tab->deleteLater();
 	}
@@ -280,9 +282,9 @@ void HxNxToolkit::OnTabClose(int idx)
 
 void HxNxToolkit::OnTabModified(Tab* tab, Component* component, bool undoable)
 {
-	const auto tabIdx = ui.Tabs->indexOf(tab);
-	if (tabIdx >= 0 && tab->IsModified() && !ui.Tabs->tabText(tabIdx).endsWith('*')) {
-		ui.Tabs->setTabText(tabIdx, ui.Tabs->tabText(tabIdx) + "*");
+	const auto tabIdx = ui.Tabs->GetIndexOf(tab);
+	if (tabIdx >= 0 && tab->IsModified() && !ui.Tabs->GetTabText(tabIdx).endsWith('*')) {
+		ui.Tabs->SetTabText(tabIdx, ui.Tabs->GetTabText(tabIdx) + "*");
 	}
 	workspaceModified = true;
 	UpdateWindowTitle();
@@ -297,9 +299,9 @@ void HxNxToolkit::OnTabModified(Tab* tab, Component* component, bool undoable)
 
 void HxNxToolkit::OnTabSaved(Tab* tab)
 {
-	const auto tabIdx = ui.Tabs->indexOf(tab);
-	if (tabIdx >= 0 && tab->IsModified() && ui.Tabs->tabText(tabIdx).endsWith('*')) {
-		ui.Tabs->setTabText(tabIdx, ui.Tabs->tabText(tabIdx).chopped(1));
+	const auto tabIdx = ui.Tabs->GetIndexOf(tab);
+	if (tabIdx >= 0 && tab->IsModified() && ui.Tabs->GetTabText(tabIdx).endsWith('*')) {
+		ui.Tabs->SetTabText(tabIdx, ui.Tabs->GetTabText(tabIdx).chopped(1));
 	}
 }
 
@@ -336,7 +338,7 @@ void HxNxToolkit::LoadWorkspaceTriggered()
 
 void HxNxToolkit::CloseTabTriggered()
 {
-	OnTabClose(ui.Tabs->currentIndex());
+	OnTabClose(ui.Tabs->GetCurrentIndex());
 }
 
 void HxNxToolkit::AlwaysOnTopToggled(bool onTop)
@@ -370,7 +372,7 @@ void HxNxToolkit::SettingsTriggered()
 
 void HxNxToolkit::TabContextMenuRequested(const QPoint& pos)
 {
-	auto tabBar = ui.Tabs->tabBar();
+	auto tabBar = ui.Tabs->GetTabBar();
 	auto tabIdx = tabBar->tabAt(pos);
 	
 	if (tabIdx == -1) {
@@ -386,7 +388,7 @@ void HxNxToolkit::TabContextMenuRequested(const QPoint& pos)
 
 void HxNxToolkit::TabRenameTriggered(int tabIdx)
 {
-	auto tabBar = ui.Tabs->tabBar();
+	auto tabBar = ui.Tabs->GetTabBar();
 
 	bool entered = false;
 	auto newTitle = QInputDialog::getText(this, "Rename tab", "Tab title:", QLineEdit::Normal, tabBar->tabText(tabIdx), &entered);
@@ -433,15 +435,15 @@ bool HxNxToolkit::SaveWorkspaceToPath(const QString& savePath)
 {
 	QJsonObject workspace;
 	workspace["Name"] = workspaceName;
-	workspace["ActiveTab"] = ui.Tabs->currentIndex();
+	workspace["ActiveTab"] = ui.Tabs->GetCurrentIndex();
 	QJsonArray tabs;
-	for (int index = 0; index < ui.Tabs->count(); ++index) {
-		auto* tab = dynamic_cast<Tab*>(ui.Tabs->widget(index));
+	for (int tabIdx = 0; tabIdx < ui.Tabs->GetCount(); ++tabIdx) {
+		auto tab = dynamic_cast<Tab*>(ui.Tabs->GetWidget(tabIdx));
 		if (!tab) {
 			continue;
 		}
 		auto tabState = tab->SaveState();
-		tabState["Title"] = ui.Tabs->tabText(index);
+		tabState["Title"] = ui.Tabs->GetTabText(tabIdx);
 		tabs.append(tabState);
 	}
 	workspace["Tabs"] = tabs;
@@ -523,9 +525,9 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 
 	ClearTabs();
 	for (const auto& tabValue : tabStates) {
-		auto* tab = NewTab();
+		auto tab = NewTab();
 		auto tabState = tabValue.toObject();
-		ui.Tabs->setTabText(ui.Tabs->indexOf(tab), tabState["Title"].toString());
+		ui.Tabs->SetTabText(ui.Tabs->GetIndexOf(tab), tabState["Title"].toString());
 		try {
 			tab->LoadState(tabState);
 		} catch (const std::exception&) {
@@ -533,10 +535,10 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 			return false;
 		}
 	}
-	if (ui.Tabs->count() == 0) {
+	if (ui.Tabs->GetCount() == 0) {
 		NewTab();
 	}
-	ui.Tabs->setCurrentIndex(std::clamp(workspace["ActiveTab"].toInt(), 0, ui.Tabs->count() - 1));
+	ui.Tabs->SetCurrentIndex(std::clamp(workspace["ActiveTab"].toInt(), 0, ui.Tabs->GetCount() - 1));
 	workspacePath = loadPath;
 	workspaceName = workspace["Name"].toString();
 	workspaceModified = false;
@@ -551,22 +553,22 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 
 void HxNxToolkit::SetTabTitle(int tabIdx, const QString& newTitle)
 {
-	if (ui.Tabs->tabText(tabIdx) == newTitle) {
+	if (ui.Tabs->GetTabText(tabIdx) == newTitle) {
 		return;
 	}
 
-	ui.Tabs->setTabText(tabIdx, newTitle);
-	auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(tabIdx));
+	ui.Tabs->SetTabText(tabIdx, newTitle);
+	auto tab = dynamic_cast<Tab*>(ui.Tabs->GetWidget(tabIdx));
 	tab->Modify();
 }
 
 void HxNxToolkit::RestoreClosedTab(const QJsonObject& state, int tabIdx)
 {
 	auto tab = NewTab();
-	ui.Tabs->removeTab(ui.Tabs->indexOf(tab));
-	tabIdx = std::clamp(tabIdx, 0, ui.Tabs->count());
-	ui.Tabs->insertTab(tabIdx, tab, state["Title"].toString());
-	ui.Tabs->setCurrentWidget(tab);
+	ui.Tabs->RemoveTab(ui.Tabs->GetIndexOf(tab));
+	tabIdx = std::clamp(tabIdx, 0, ui.Tabs->GetCount());
+	ui.Tabs->InsertTab(tabIdx, tab, state["Title"].toString());
+	ui.Tabs->SetCurrentWidget(tab);
 	tab->LoadState(state);
 
 	if (state["Modified"].toBool()) {
@@ -583,8 +585,8 @@ void HxNxToolkit::UndoCleanStateChanged(bool clean)
 	workspaceModified = !clean;
 
 	if (clean) {
-		for (int tabIdx = 0; tabIdx < ui.Tabs->count(); ++tabIdx) {
-			auto tab = dynamic_cast<Tab*>(ui.Tabs->widget(tabIdx));
+		for (int tabIdx = 0; tabIdx < ui.Tabs->GetCount(); ++tabIdx) {
+			auto tab = dynamic_cast<Tab*>(ui.Tabs->GetWidget(tabIdx));
 			if (tab) {
 				tab->MarkSaved();
 			}
@@ -609,9 +611,9 @@ bool HxNxToolkit::ConfirmWorkspaceReplacement()
 
 void HxNxToolkit::ClearTabs()
 {
-	while (ui.Tabs->count() > 0) {
-		auto* tab = ui.Tabs->widget(0);
-		ui.Tabs->removeTab(0);
+	while (ui.Tabs->GetCount() > 0) {
+		auto tab = ui.Tabs->GetWidget(0);
+		ui.Tabs->RemoveTab(0);
 		tab->deleteLater();
 	}
 }

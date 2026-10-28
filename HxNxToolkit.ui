@@ -31,23 +31,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QTabWidget" name="Tabs">
-      <property name="currentIndex">
-       <number>-1</number>
-      </property>
-      <property name="elideMode">
-       <enum>Qt::ElideLeft</enum>
-      </property>
-      <property name="documentMode">
-       <bool>true</bool>
-      </property>
-      <property name="tabsClosable">
-       <bool>true</bool>
-      </property>
-      <property name="movable">
-       <bool>true</bool>
-      </property>
-     </widget>
+     <widget class="DynamicTabWidget" name="Tabs" native="true"/>
     </item>
    </layout>
   </widget>
@@ -183,6 +167,14 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>DynamicTabWidget</class>
+   <extends>QWidget</extends>
+   <header>UI/DynamicTabWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
@@ -242,7 +234,7 @@
   </connection>
   <connection>
    <sender>Tabs</sender>
-   <signal>tabCloseRequested(int)</signal>
+   <signal>TabCloseRequested(int)</signal>
    <receiver>HxNxToolkitClass</receiver>
    <slot>OnTabClose(int)</slot>
    <hints>
