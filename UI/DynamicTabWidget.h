@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QSet>
 #include <QWidget>
 
 class QIcon;
@@ -27,6 +28,8 @@ public:
 	QString GetTabText(int tabIdx) const;
 	void SetTabText(int tabIdx, const QString& title);
 	void SetTabIcon(int tabIdx, const QIcon& icon);
+	bool GetTabPinned(int tabIdx) const;
+	void SetTabPinned(int tabIdx, bool pinned);
 	QTabBar* GetTabBar() const;
 
 signals:
@@ -39,11 +42,14 @@ protected:
 
 private slots:
 	void OnCurrentChanged(int tabIdx);
+	void OnTabCloseRequested(int tabIdx);
 	void OnTabMoved(int from, int to);
 
 private:
+	void UpdateCloseButtons();
 	void UpdateTabBarMaximumWidth();
 
 	QTabBar* tabBar;
 	QStackedWidget* pages;
+	QSet<QWidget*> pinnedPages;
 };

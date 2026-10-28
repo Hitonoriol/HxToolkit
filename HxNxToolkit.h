@@ -54,6 +54,7 @@ private slots:
 	void AlwaysOnTopToggled(bool onTop);
 	void SettingsTriggered();
 	void TabContextMenuRequested(const QPoint& pos);
+	void TabPinTriggered(int tabIdx);
 	void TabRenameTriggered(int tabIdx);
 
 private:
