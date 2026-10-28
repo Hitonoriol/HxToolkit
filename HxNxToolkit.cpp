@@ -290,7 +290,7 @@ void HxNxToolkit::changeEvent(QEvent* event)
 
 void HxNxToolkit::OnTabClose(int idx)
 {
-	if (idx < 0 || idx >= ui.Tabs->GetCount()) {
+	if (idx < 0 || idx >= ui.Tabs->GetCount() || ui.Tabs->GetTabPinned(idx)) {
 		return;
 	}
 
@@ -417,9 +417,21 @@ void HxNxToolkit::TabContextMenuRequested(const QPoint& pos)
 
 	QMenu menu;
 
+	connect(menu.addAction(ui.Tabs->GetTabPinned(tabIdx) ? "Unpin" : "Pin"), &QAction::triggered,
+		this, [this, tabIdx] { TabPinTriggered(tabIdx); });
 	connect(menu.addAction("Rename"), &QAction::triggered, this, [=] { TabRenameTriggered(tabIdx); });
 
 	menu.exec(tabBar->mapToGlobal(pos));
+}
+
+void HxNxToolkit::TabPinTriggered(int tabIdx)
+{
+	ui.Tabs->SetTabPinned(tabIdx, !ui.Tabs->GetTabPinned(tabIdx));
+	workspace->SetModified(true);
+	UpdateWindowTitle();
+	if (undoManager) {
+		undoManager->MarkDirty();
+	}
 }
 
 void HxNxToolkit::TabRenameTriggered(int tabIdx)
@@ -480,6 +492,7 @@ bool HxNxToolkit::SaveWorkspaceToPath(const QString& savePath)
 		}
 		auto tabState = tab->SaveState();
 		tabState["Title"] = ui.Tabs->GetTabText(tabIdx);
+		tabState["Pinned"] = ui.Tabs->GetTabPinned(tabIdx);
 		tabs.append(tabState);
 	}
 	workspace["Tabs"] = tabs;
@@ -563,7 +576,9 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 	for (const auto& tabValue : tabStates) {
 		auto tab = NewTab();
 		auto tabState = tabValue.toObject();
-		ui.Tabs->SetTabText(ui.Tabs->GetIndexOf(tab), tabState["Title"].toString());
+		auto tabIdx = ui.Tabs->GetIndexOf(tab);
+		ui.Tabs->SetTabText(tabIdx, tabState["Title"].toString());
+		ui.Tabs->SetTabPinned(tabIdx, tabState["Pinned"].toBool());
 		try {
 			tab->LoadState(tabState);
 		} catch (const std::exception&) {

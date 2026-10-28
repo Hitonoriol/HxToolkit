@@ -42,7 +42,7 @@ DynamicTabWidget::DynamicTabWidget(QWidget* parent)
 
 	connect(addTabButton, &QToolButton::clicked, this, &DynamicTabWidget::AddTabRequested);
 	connect(tabBar, &QTabBar::currentChanged, this, &DynamicTabWidget::OnCurrentChanged);
-	connect(tabBar, &QTabBar::tabCloseRequested, this, &DynamicTabWidget::TabCloseRequested);
+	connect(tabBar, &QTabBar::tabCloseRequested, this, &DynamicTabWidget::OnTabCloseRequested);
 	connect(tabBar, &QTabBar::tabMoved, this, &DynamicTabWidget::OnTabMoved);
 }
 
@@ -80,6 +80,7 @@ void DynamicTabWidget::RemoveTab(int tabIdx)
 	}
 
 	auto page = pages->widget(tabIdx);
+	pinnedPages.remove(page);
 	pages->removeWidget(page);
 	tabBar->removeTab(tabIdx);
 	UpdateTabBarMaximumWidth();
@@ -137,6 +138,27 @@ void DynamicTabWidget::SetTabIcon(int tabIdx, const QIcon& icon)
 	UpdateTabBarMaximumWidth();
 }
 
+bool DynamicTabWidget::GetTabPinned(int tabIdx) const
+{
+	return pinnedPages.contains(GetWidget(tabIdx));
+}
+
+void DynamicTabWidget::SetTabPinned(int tabIdx, bool pinned)
+{
+	auto page = GetWidget(tabIdx);
+	if (!page || pinned == pinnedPages.contains(page)) {
+		return;
+	}
+
+	if (pinned) {
+		pinnedPages.insert(page);
+	} else {
+		pinnedPages.remove(page);
+	}
+
+	UpdateCloseButtons();
+}
+
 QTabBar* DynamicTabWidget::GetTabBar() const
 {
 	return tabBar;
@@ -146,6 +168,13 @@ void DynamicTabWidget::OnCurrentChanged(int tabIdx)
 {
 	pages->setCurrentIndex(tabIdx);
 	emit CurrentChanged(tabIdx);
+}
+
+void DynamicTabWidget::OnTabCloseRequested(int tabIdx)
+{
+	if (!GetTabPinned(tabIdx)) {
+		emit TabCloseRequested(tabIdx);
+	}
 }
 
 void DynamicTabWidget::OnTabMoved(int from, int to)
@@ -159,4 +188,23 @@ void DynamicTabWidget::OnTabMoved(int from, int to)
 void DynamicTabWidget::UpdateTabBarMaximumWidth()
 {
 	tabBar->setMaximumWidth(tabBar->sizeHint().width());
+}
+
+void DynamicTabWidget::UpdateCloseButtons()
+{
+	tabBar->setTabsClosable(false);
+	tabBar->setTabsClosable(true);
+	auto closeButtonPosition = static_cast<QTabBar::ButtonPosition>(
+		tabBar->style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, nullptr, tabBar));
+	for (int tabIdx = 0; tabIdx < GetCount(); ++tabIdx) {
+		if (GetTabPinned(tabIdx)) {
+			auto closeButton = tabBar->tabButton(tabIdx, closeButtonPosition);
+			tabBar->setTabButton(tabIdx, closeButtonPosition, nullptr);
+			if (closeButton) {
+				closeButton->deleteLater();
+			}
+		}
+	}
+
+	UpdateTabBarMaximumWidth();
 }
