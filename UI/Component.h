@@ -21,6 +21,9 @@ public:
 	virtual ~Component();
 
 	ToolType GetType();
+	QString GetId() const;
+	QString GetTitle() const;
+	ComponentContainer* GetContainer() const;
 	virtual QList<ToolConfigurationParameter*> GetConfigurationParameters() const;
 
 	virtual QJsonObject SaveState();
@@ -31,6 +34,7 @@ signals:
 
 private:
 	ToolType type;
+	QString id;
 	QPointer<ComponentContainer> container;
 };
 

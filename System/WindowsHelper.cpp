@@ -150,6 +150,22 @@ QList<WindowInfo> GetWindows()
 	return windows;
 }
 
+std::optional<QPoint> GetTextCursorPosition()
+{
+	GUITHREADINFO threadInfo{};
+	threadInfo.cbSize = sizeof(threadInfo);
+	if (!GetGUIThreadInfo(0, &threadInfo) || !threadInfo.hwndCaret) {
+		return std::nullopt;
+	}
+
+	POINT position{threadInfo.rcCaret.left, threadInfo.rcCaret.bottom};
+	if (!ClientToScreen(threadInfo.hwndCaret, &position)) {
+		return std::nullopt;
+	}
+
+	return QPoint(position.x, position.y);
+}
+
 bool IsAlwaysOnTop(HWND window)
 {
 	return IsWindow(window) && (GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TOPMOST);

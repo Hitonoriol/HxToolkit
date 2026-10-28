@@ -2,6 +2,7 @@
 
 #include "App/SettingsWindow.h"
 #include "App/UndoManager.h"
+#include "App/Workspace.h"
 #include "UI/Tab.h"
 #include "UI/DynamicTabWidget.h"
 #include "UI/ComponentContainer.h"
@@ -33,6 +34,7 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 	: QMainWindow(parent)
 {
 	ui.setupUi(this);
+	workspace = new Workspace(this);
 	CreateDefaultSettings();
 	NewTab();
 	UpdateWindowTitle();
@@ -70,7 +72,7 @@ HxNxToolkit::HxNxToolkit(QWidget *parent)
 		}
 	});
 	connect(ui.Tabs->GetTabBar(), &QTabBar::tabMoved, this, [this] {
-		workspaceModified = true;
+		workspace->SetModified(true);
 		UpdateWindowTitle();
 		if (undoManager) {
 			undoManager->MarkDirty();
@@ -129,6 +131,7 @@ void HxNxToolkit::LoadComponent(ToolType componentType, const QJsonObject& state
 {
 	if (auto component = ComponentFactory::CreateComponent(this, componentType)) {
 		component->LoadState(state);
+		workspace->NotifyComponentsChanged();
 	}
 }
 
@@ -149,6 +152,10 @@ Tab* HxNxToolkit::NewTab()
 	});
 	connect(tab, &Tab::TabModified, this, &HxNxToolkit::OnTabModified);
 	connect(tab, &Tab::TabSaved, this, &HxNxToolkit::OnTabSaved);
+	connect(tab, &Tab::ComponentAttached, this, [this](Tab* componentTab, Component* component) {
+		workspace->RegisterComponent(componentTab, component);
+	});
+	connect(tab, &Tab::ComponentDetached, workspace, &Workspace::UnregisterComponent);
 	connect(tab, &Tab::ComponentAdded, this,
 		[this](Tab* tab, ComponentContainer* container, const Tab::ComponentLocation& location) {
 			if (undoManager) {
@@ -175,9 +182,36 @@ Tab* HxNxToolkit::GetCurrentTab()
 	return dynamic_cast<Tab*>(ui.Tabs->GetCurrentWidget());
 }
 
+Workspace* HxNxToolkit::GetWorkspace() const
+{
+	return workspace;
+}
+
+void HxNxToolkit::ShowComponent(Component* component)
+{
+	if (!component) {
+		return;
+	}
+
+	auto container = component->GetContainer();
+	if (container && container->window() != this) {
+		container->ShowPopoutAt(container->window()->geometry().center());
+		return;
+	}
+
+	if (auto tab = workspace->GetTab(component)) {
+		ui.Tabs->SetCurrentWidget(tab);
+	}
+
+	show();
+	setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+	raise();
+	activateWindow();
+}
+
 void HxNxToolkit::SaveCurrentWorkspace()
 {
-	if (workspaceModified) {
+	if (workspace->GetModified()) {
 		SaveWorkspace();
 	}
 }
@@ -220,7 +254,7 @@ void HxNxToolkit::ShowNotification(Component* component, const QString& title, c
 void HxNxToolkit::NewTabTriggered()
 {
 	NewTab();
-	workspaceModified = true;
+	workspace->SetModified(true);
 	UpdateWindowTitle();
 	undoManager->MarkDirty();
 }
@@ -274,9 +308,10 @@ void HxNxToolkit::OnTabClose(int idx)
 
 	ui.Tabs->RemoveTab(idx);
 	if (tab) {
+		workspace->RemoveTab(tab);
 		tab->deleteLater();
 	}
-	workspaceModified = true;
+	workspace->SetModified(true);
 	UpdateWindowTitle();
 }
 
@@ -286,7 +321,8 @@ void HxNxToolkit::OnTabModified(Tab* tab, Component* component, bool undoable)
 	if (tabIdx >= 0 && tab->IsModified() && !ui.Tabs->GetTabText(tabIdx).endsWith('*')) {
 		ui.Tabs->SetTabText(tabIdx, ui.Tabs->GetTabText(tabIdx) + "*");
 	}
-	workspaceModified = true;
+	workspace->SetModified(true);
+	workspace->NotifyComponentsChanged();
 	UpdateWindowTitle();
 	if (undoManager) {
 		if (component) {
@@ -307,8 +343,8 @@ void HxNxToolkit::OnTabSaved(Tab* tab)
 
 void HxNxToolkit::Autosave()
 {
-	if (!workspacePath.isEmpty() && workspaceModified) {
-		SaveWorkspaceToPath(workspacePath);
+	if (!workspace->GetPath().isEmpty() && workspace->GetModified()) {
+		SaveWorkspaceToPath(workspace->GetPath());
 	}
 }
 
@@ -318,10 +354,10 @@ void HxNxToolkit::NewWorkspaceTriggered()
 		return;
 	}
 	ClearTabs();
-	workspacePath.clear();
-	workspaceName = "Untitled Workspace";
+	workspace->SetPath({});
+	workspace->SetName("Untitled Workspace");
 	NewTab();
-	workspaceModified = false;
+	workspace->SetModified(false);
 	UpdateWindowTitle();
 	undoManager->Reset();
 }
@@ -415,26 +451,26 @@ void HxNxToolkit::CreateDefaultSettings()
 
 bool HxNxToolkit::SaveWorkspace()
 {
-	if (workspacePath.isEmpty()) {
+	if (workspace->GetPath().isEmpty()) {
 		QFileDialog dialog(this);
 		dialog.setDirectory(Settings::GetString(Option::LastSaveDir));
-		dialog.selectFile(workspaceName);
+		dialog.selectFile(workspace->GetName());
 		dialog.setDefaultSuffix("hxnx-workspace");
 		dialog.setNameFilter("HxNx Workspace File (*.hxnx-workspace)");
 		dialog.setAcceptMode(QFileDialog::AcceptSave);
 		if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty()) {
 			return false;
 		}
-		workspacePath = dialog.selectedFiles().first();
-		workspaceName = QFileInfo(workspacePath).completeBaseName();
+		workspace->SetPath(dialog.selectedFiles().first());
+		workspace->SetName(QFileInfo(workspace->GetPath()).completeBaseName());
 	}
-	return SaveWorkspaceToPath(workspacePath);
+	return SaveWorkspaceToPath(workspace->GetPath());
 }
 
 bool HxNxToolkit::SaveWorkspaceToPath(const QString& savePath)
 {
 	QJsonObject workspace;
-	workspace["Name"] = workspaceName;
+	workspace["Name"] = this->workspace->GetName();
 	workspace["ActiveTab"] = ui.Tabs->GetCurrentIndex();
 	QJsonArray tabs;
 	for (int tabIdx = 0; tabIdx < ui.Tabs->GetCount(); ++tabIdx) {
@@ -454,8 +490,8 @@ bool HxNxToolkit::SaveWorkspaceToPath(const QString& savePath)
 		return false;
 	}
 	saveFile.write(QJsonDocument(workspace).toJson());
-	workspacePath = savePath;
-	workspaceModified = false;
+	this->workspace->SetPath(savePath);
+	this->workspace->SetModified(false);
 	Settings::Set(Option::LastSaveDir, QFileInfo(savePath).absolutePath());
 	Settings::Set(Option::LastSavedWorkspacePath, savePath);
 	UpdateWindowTitle();
@@ -539,9 +575,9 @@ bool HxNxToolkit::LoadWorkspaceFromPath(const QString& loadPath)
 		NewTab();
 	}
 	ui.Tabs->SetCurrentIndex(std::clamp(workspace["ActiveTab"].toInt(), 0, ui.Tabs->GetCount() - 1));
-	workspacePath = loadPath;
-	workspaceName = workspace["Name"].toString();
-	workspaceModified = false;
+	this->workspace->SetPath(loadPath);
+	this->workspace->SetName(workspace["Name"].toString());
+	this->workspace->SetModified(false);
 	Settings::Set(Option::LastSaveDir, QFileInfo(loadPath).absolutePath());
 	Settings::Set(Option::LastSavedWorkspacePath, loadPath);
 	UpdateWindowTitle();
@@ -576,13 +612,13 @@ void HxNxToolkit::RestoreClosedTab(const QJsonObject& state, int tabIdx)
 	}
 	undoManager->RegisterTab(tab);
 
-	workspaceModified = true;
+	workspace->SetModified(true);
 	UpdateWindowTitle();
 }
 
 void HxNxToolkit::UndoCleanStateChanged(bool clean)
 {
-	workspaceModified = !clean;
+	workspace->SetModified(!clean);
 
 	if (clean) {
 		for (int tabIdx = 0; tabIdx < ui.Tabs->GetCount(); ++tabIdx) {
@@ -598,7 +634,7 @@ void HxNxToolkit::UndoCleanStateChanged(bool clean)
 
 bool HxNxToolkit::ConfirmWorkspaceReplacement()
 {
-	if (!workspaceModified) {
+	if (!workspace->GetModified()) {
 		return true;
 	}
 	auto result = QMessageBox::question(this, "Unsaved workspace", "Save changes to the current workspace?",
@@ -614,13 +650,15 @@ void HxNxToolkit::ClearTabs()
 	while (ui.Tabs->GetCount() > 0) {
 		auto tab = ui.Tabs->GetWidget(0);
 		ui.Tabs->RemoveTab(0);
+		workspace->RemoveTab(static_cast<Tab*>(tab));
 		tab->deleteLater();
 	}
 }
 
 void HxNxToolkit::UpdateWindowTitle()
 {
-	setWindowTitle(QString("HxNxToolkit - %1%2").arg(workspaceName, workspaceModified ? " *" : ""));
+	setWindowTitle(QString("HxNxToolkit - %1%2")
+		.arg(workspace->GetName(), workspace->GetModified() ? " *" : ""));
 }
 
 void HxNxToolkit::Quit()
