@@ -26,6 +26,7 @@ public:
 	Tab* GetCurrentTab();
 	Workspace* GetWorkspace() const;
 	void ShowComponent(Component* component);
+	void ActivateWindow();
 	void SaveCurrentWorkspace();
 	void ShowNotification(Component* component, const QString& title, const QString& message);
 

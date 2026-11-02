@@ -209,6 +209,14 @@ void HxNxToolkit::ShowComponent(Component* component)
 	activateWindow();
 }
 
+void HxNxToolkit::ActivateWindow()
+{
+	show();
+	setWindowState(windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+	raise();
+	activateWindow();
+}
+
 void HxNxToolkit::SaveCurrentWorkspace()
 {
 	if (workspace->GetModified()) {
