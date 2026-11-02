@@ -31,6 +31,7 @@ endforeach()
 
 if(NOT WIN32)
     list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/Network/(Webview|WebView2Widget)\\.(cpp|h)$")
+    list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/Filesystem/LockedFileExplorer\\.(cpp|h|ui)$")
     list(FILTER HXNXTOOLKIT_SOURCES EXCLUDE REGEX "/System/(AlwaysOnTop|WindowBox|WindowsHelper)\\.(cpp|h)$")
 endif()
 
@@ -138,6 +139,7 @@ if(WIN32)
         advapi32
         dwmapi
         ole32
+        rstrtmgr
     )
 
     if(HXNXTOOLKIT_WEBVIEW2_LOADER)
@@ -162,7 +164,7 @@ if(WIN32 AND TARGET Qt6::qmake)
     get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
     if(EXISTS "${QT_BIN_DIR}/windeployqt.exe")
         add_custom_command(TARGET HxNxToolkit POST_BUILD
-            COMMAND "${QT_BIN_DIR}/windeployqt.exe" --no-translations --no-compiler-runtime "$<TARGET_FILE:HxNxToolkit>"
+            COMMAND "${QT_BIN_DIR}/windeployqt.exe" --no-translations "$<TARGET_FILE:HxNxToolkit>"
             COMMENT "Deploying Qt runtime beside HxNxToolkit"
         )
     endif()

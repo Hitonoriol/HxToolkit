@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LockedFileExplorerClass</class>
+ <widget class="QWidget" name="LockedFileExplorerClass">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>760</width><height>320</height></rect>
+  </property>
+  <property name="windowTitle"><string>Locked File Explorer</string></property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin"><number>0</number></property>
+   <property name="topMargin"><number>0</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
+   <item>
+    <layout class="QHBoxLayout" name="fileLayout">
+     <item><widget class="QLineEdit" name="PathField"><property name="placeholderText"><string>File or folder path</string></property></widget></item>
+     <item><widget class="QPushButton" name="BrowseButton"><property name="text"><string>Browse</string></property></widget></item>
+    </layout>
+   </item>
+   <item><widget class="QLabel" name="StatusLabel"><property name="text"><string>Select a file or folder, or drop it anywhere on this tool.</string></property></widget></item>
+   <item>
+    <widget class="QScrollArea" name="ProcessListScrollArea">
+     <property name="frameShape"><enum>QFrame::Shape::NoFrame</enum></property>
+     <property name="widgetResizable"><bool>true</bool></property>
+     <widget class="QWidget" name="ProcessList">
+      <layout class="QVBoxLayout" name="ProcessListLayout">
+       <property name="spacing"><number>8</number></property>
+       <property name="leftMargin"><number>0</number></property>
+       <property name="topMargin"><number>0</number></property>
+       <property name="rightMargin"><number>0</number></property>
+       <property name="bottomMargin"><number>0</number></property>
+       <property name="alignment"><set>Qt::AlignmentFlag::AlignTop</set></property>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

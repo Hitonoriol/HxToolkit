@@ -24,6 +24,9 @@
 #include "Filesystem/FileSearch.h"
 #include "Filesystem/LogExtractor.h"
 #include "Filesystem/SymlinkMover.h"
+#ifdef _WIN32
+#include "Filesystem/LockedFileExplorer.h"
+#endif
 
 #include "System/RamMonitor.h"
 #include "System/ClipboardHistory.h"
@@ -96,6 +99,9 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::FileSearch, {"Filesystem", "File search", ":/icons/folder-search.svg", DefaultSupplier<FileSearch>()}},
 	{ToolType::LogExtractor, {"Filesystem", "Log Extractor", ":/icons/text.svg", DefaultSupplier<LogExtractor>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", ":/icons/link.svg", DefaultSupplier<SymlinkMover>()}},
+#ifdef _WIN32
+	{ToolType::LockedFileExplorer, {"Filesystem", "Locked File Explorer", ":/icons/folder-search.svg", DefaultSupplier<LockedFileExplorer>()}},
+#endif
 	{ToolType::Ping, {"Network", "Ping", ":/icons/network.svg", DefaultSupplier<Ping>(false)}},
 	{ToolType::NetworkInterfaces, {"Network", "Network interfaces", ":/icons/network.svg", DefaultSupplier<NetworkInterfaces>()}},
 	{ToolType::RSSFeed, {"Network", "RSS Feed", ":/icons/network.svg", [](HxNxToolkit* toolkit, const QString& name) -> Component* {
