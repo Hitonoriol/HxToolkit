@@ -24,8 +24,6 @@ private slots:
 	void OnMoveClicked();
 
 private:
-	static bool IsEmptyDir(const std::filesystem::path& path);
-
 	Ui::SymlinkMoverClass ui;
 
 	std::filesystem::path srcPath;
