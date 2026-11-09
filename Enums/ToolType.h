@@ -24,7 +24,7 @@ public:
 		FocusTracker = 23,
 		Webview = 24,
 		WindowBox = 26, AlwaysOnTop = 27,
-		RSSFeed = 28, QuickMenu = 29
+		RSSFeed = 28, QuickMenu = 29, Freecloud = 31
 	};
 	Q_ENUM(Value)
 };

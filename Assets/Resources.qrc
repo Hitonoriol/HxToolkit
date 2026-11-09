@@ -23,6 +23,15 @@
         <file>gitlab.svg</file>
         <file>random.svg</file>
         <file>folder-search.svg</file>
+        <file>folder.svg</file>
+        <file>folder-plus.svg</file>
+        <file>freecloud-cloud.svg</file>
+        <file>freecloud-download.svg</file>
+        <file>freecloud-local.svg</file>
+        <file>freecloud-upload.svg</file>
+        <file>freecloud-pause.svg</file>
+        <file>freecloud-resume.svg</file>
+        <file>freecloud-stop.svg</file>
         <file>link.svg</file>
         <file>memory.svg</file>
         <file>clipboard.svg</file>

@@ -13,10 +13,12 @@ class ToolConfigurationParameter : public QObject
 
 public:
 	using Editor = std::function<bool(QWidget* parent)>;
+	using Visibility = std::function<bool()>;
 
-	ToolConfigurationParameter(const QString& name, Editor editor, QObject* parent = nullptr);
+	ToolConfigurationParameter(const QString& name, Editor editor, QObject* parent = nullptr, Visibility visibility = {});
 
 	QString GetName() const;
+	bool IsVisible() const;
 	void Edit(QWidget* parent = nullptr);
 
 signals:
@@ -25,4 +27,5 @@ signals:
 private:
 	QString name;
 	Editor editor;
+	Visibility visibility;
 };

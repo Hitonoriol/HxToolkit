@@ -24,6 +24,7 @@
 #include "Filesystem/FileSearch.h"
 #include "Filesystem/LogExtractor.h"
 #include "Filesystem/SymlinkMover.h"
+#include "Filesystem/Freecloud.h"
 #ifdef _WIN32
 #include "Filesystem/LockedFileExplorer.h"
 #endif
@@ -99,6 +100,7 @@ std::map<ToolType, ComponentSupplierEntry> ComponentFactory::componentSuppliers{
 	{ToolType::FileSearch, {"Filesystem", "File search", ":/icons/folder-search.svg", DefaultSupplier<FileSearch>()}},
 	{ToolType::LogExtractor, {"Filesystem", "Log Extractor", ":/icons/text.svg", DefaultSupplier<LogExtractor>()}},
 	{ToolType::SymlinkMover, {"Filesystem", "Symlink mover", ":/icons/link.svg", DefaultSupplier<SymlinkMover>()}},
+	{ToolType::Freecloud, {"Filesystem", "Freecloud", ":/icons/folder-search.svg", DefaultSupplier<Freecloud>()}},
 #ifdef _WIN32
 	{ToolType::LockedFileExplorer, {"Filesystem", "Locked File Explorer", ":/icons/folder-search.svg", DefaultSupplier<LockedFileExplorer>()}},
 #endif

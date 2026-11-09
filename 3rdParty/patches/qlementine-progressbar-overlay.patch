@@ -1,0 +1,49 @@
+diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
+index d189a64..b39c724 100644
+--- a/lib/src/style/QlementineStyle.cpp
++++ b/lib/src/style/QlementineStyle.cpp
+@@ -1440,8 +1440,7 @@ void QlementineStyle::drawControl(
+       if (const auto* optProgressBar = qstyleoption_cast<const QStyleOptionProgressBar*>(opt)) {
+         const auto mouse = getMouseState(optProgressBar->state);
+         const auto& color = labelForegroundColor(mouse, w);
+-        const auto textFlags =
+-          Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine | Qt::AlignRight | Qt::TextHideMnemonic;
++        const auto textFlags = Qt::AlignCenter | Qt::TextSingleLine | Qt::TextHideMnemonic;
+         p->setBrush(Qt::NoBrush);
+         p->setPen(color);
+         p->drawText(optProgressBar->rect, textFlags, optProgressBar->text);
+@@ -2453,30 +2452,14 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+     case SE_ProgressBarGroove:
+       if (const auto* optProgressBar = qstyleoption_cast<const QStyleOptionProgressBar*>(opt)) {
+         const auto showText = optProgressBar->textVisible;
+-        const auto labelW = showText ? optProgressBar->fontMetrics
+-                                         .boundingRect(optProgressBar->rect, Qt::AlignRight, QStringLiteral("100%"))
+-                                         .width()
+-                                     : 0;
+-        const auto spacing = showText ? _impl->theme.spacing : 0;
+-        const auto barW = opt->rect.width() - labelW - spacing;
+-        const auto barH = _impl->theme.progressBarGrooveHeight;
++        const auto textHeight = showText ? optProgressBar->fontMetrics.height() + _impl->theme.spacing : 0;
++        const auto barH = std::max(_impl->theme.progressBarGrooveHeight, textHeight);
+         const auto barY = opt->rect.y() + (opt->rect.height() - barH) / 2;
+-        return QRect{ opt->rect.x(), barY, barW, barH };
++        return QRect{ opt->rect.x(), barY, opt->rect.width(), barH };
+       }
+       return {};
+     case SE_ProgressBarLabel:
+-      if (const auto* optProgressBar = qstyleoption_cast<const QStyleOptionProgressBar*>(opt)) {
+-        const auto showText = optProgressBar->textVisible;
+-        const auto labelW = showText ? optProgressBar->fontMetrics
+-                                         .boundingRect(optProgressBar->rect, Qt::AlignRight, QStringLiteral("100%"))
+-                                         .width()
+-                                     : 0;
+-        const auto labelH = showText ? optProgressBar->fontMetrics.height() : 0;
+-        const auto labelX = opt->rect.right() - labelW;
+-        const auto labelY = opt->rect.y() + (opt->rect.height() - labelH) / 2;
+-        return QRect{ labelX, labelY, labelW, labelH };
+-      }
+-      return {};
++      return subElementRect(SE_ProgressBarGroove, opt, w);
+     case SE_ToolBoxTabContents:
+       break;
+     case SE_HeaderLabel:

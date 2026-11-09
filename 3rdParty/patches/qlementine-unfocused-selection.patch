@@ -1,0 +1,16 @@
+diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
+index d189a64..702bd09 100644
+--- a/lib/src/style/QlementineStyle.cpp
++++ b/lib/src/style/QlementineStyle.cpp
+@@ -5430,9 +5430,9 @@ QColor const& QlementineStyle::listItemRowBackgroundColor(
+ QColor QlementineStyle::listItemBackgroundColor(MouseState const mouse, SelectionState const selected,
+   FocusState const focus, ActiveState const active, const QModelIndex& index, const QWidget* widget) const {
+   Q_UNUSED(index)
+-  Q_UNUSED(widget)
+   const auto isSelected = selected == SelectionState::Selected;
+-  const auto isActive = active == ActiveState::Active && focus == FocusState::Focused;
++  const auto useUnfocusedSelection = widget && widget->property("qlementine_unfocused_selection").toBool();
++  const auto isActive = active == ActiveState::Active && focus == FocusState::Focused && !useUnfocusedSelection;
+ 
+   if (isActive) {
+     switch (mouse) {

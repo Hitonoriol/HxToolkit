@@ -30,6 +30,17 @@ ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 	ui.ConfigurationBtn->setStyleSheet("QToolButton::menu-indicator { image: none; width: 0px; }");
 	ui.Title->setContextMenuPolicy(Qt::ContextMenuPolicy::CustomContextMenu);
 	ui.CloseBtn->setIcon(QIcon(":/icons/tool-close.svg"));
+	for (auto parameter : component->GetConfigurationParameters()) {
+		if (!parameter) {
+			continue;
+		}
+
+		connect(parameter, &ToolConfigurationParameter::Changed, component, [this] {
+			emit this->component->Modified(this->component);
+			PopulateConfigurationMenu();
+		});
+	}
+
 	PopulateConfigurationMenu();
 	UpdateCollapseButton();
 	ui.Title->setMaximumHeight(ui.Title->sizeHint().height());
@@ -44,23 +55,24 @@ ComponentContainer::ComponentContainer(Component* component, QWidget* parent)
 void ComponentContainer::PopulateConfigurationMenu()
 {
 	const auto parameters = component->GetConfigurationParameters();
-	ui.ConfigurationBtn->setVisible(!parameters.isEmpty());
-
-	auto* menu = new QMenu(ui.ConfigurationBtn);
-	for (auto* parameter : parameters) {
-		if (!parameter) {
+	auto menu = new QMenu(ui.ConfigurationBtn);
+	for (auto parameter : parameters) {
+		if (!parameter || !parameter->IsVisible()) {
 			continue;
 		}
 
-		auto* action = menu->addAction(parameter->GetName());
+		auto action = menu->addAction(parameter->GetName());
 		connect(action, &QAction::triggered, parameter, [this, parameter] {
 			parameter->Edit(this);
 		});
-		connect(parameter, &ToolConfigurationParameter::Changed, component, [this] {
-			emit component->Modified(component);
-		});
 	}
+
+	if (auto oldMenu = ui.ConfigurationBtn->menu()) {
+		oldMenu->deleteLater();
+	}
+
 	ui.ConfigurationBtn->setMenu(menu);
+	ui.ConfigurationBtn->setVisible(!menu->isEmpty());
 }
 
 ComponentContainer::~ComponentContainer()

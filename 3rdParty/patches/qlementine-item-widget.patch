@@ -1,0 +1,22 @@
+diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
+index d189a64..1ac29ab 100644
+--- a/lib/src/style/QlementineStyle.cpp
++++ b/lib/src/style/QlementineStyle.cpp
+@@ -2538,7 +2538,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+           }
+           if (se == SE_ItemViewItemText) {
+             return hasText ? QRect{ optItem->rect.x() + hPadding, y, optItem->rect.width() - 2 * hPadding, textH }
+-                           : QRect{};
++                           : optItem->rect.marginsRemoved(QMargins(hPadding, 0, hPadding, 0));
+           }
+ 
+           if (hasText) {
+@@ -2571,7 +2571,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+           if (hasIcon) {
+             x += iconSize.width() + spacing;
+           }
+-          return hasText ? QRect{ x, contentY, std::max(0, contentRight - x), contentH } : QRect{};
++          return QRect{ x, contentY, std::max(0, contentRight - x), contentH };
+         }
+       }
+       break;

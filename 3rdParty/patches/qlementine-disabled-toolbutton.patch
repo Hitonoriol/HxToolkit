@@ -1,0 +1,13 @@
+diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
+index d189a64..9ec4107 100644
+--- a/lib/src/style/QlementineStyle.cpp
++++ b/lib/src/style/QlementineStyle.cpp
+@@ -5277,7 +5277,7 @@ QColor const& QlementineStyle::toolButtonBackgroundColor(MouseState const mouse,
+     case MouseState::Hovered:
+       return primary ? _impl->theme.primaryColorHovered : _impl->theme.neutralColor;
+     case MouseState::Disabled:
+-      return primary ? _impl->theme.primaryColorDisabled : _impl->theme.neutralColorTransparent;
++      return primary ? _impl->theme.primaryColorDisabled : _impl->theme.neutralColorDisabled;
+     case MouseState::Transparent:
+     case MouseState::Normal:
+     default:

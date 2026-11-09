@@ -54,6 +54,8 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurren
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Widgets Concurrent)
 find_package(Git REQUIRED)
 
+find_package(OpenSSL REQUIRED)
+
 if(WIN32)
     find_package(unofficial-webview2 CONFIG QUIET)
 
@@ -79,7 +81,14 @@ if(WIN32)
     endif()
 endif()
 
-foreach(qlementinePatchName qlementine-combobox-fix.patch qlementine-focus-frame-lifetime.patch)
+foreach(qlementinePatchName
+    qlementine-combobox-fix.patch
+    qlementine-focus-frame-lifetime.patch
+    qlementine-disabled-toolbutton.patch
+    qlementine-item-widget.patch
+    qlementine-progressbar-overlay.patch
+    qlementine-unfocused-selection.patch
+)
     set(qlementinePatch "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/patches/${qlementinePatchName}")
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" apply --reverse --check "${qlementinePatch}"
@@ -151,6 +160,8 @@ if(WIN32)
         )
     endif()
 endif()
+
+target_link_libraries(HxNxToolkit PRIVATE OpenSSL::Crypto)
 
 set_target_properties(HxNxToolkit PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${HXNXTOOLKIT_OUTPUT_DIR}/$<CONFIG>
