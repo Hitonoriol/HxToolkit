@@ -6,6 +6,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
+#include <functional>
+
 SymlinkMover::SymlinkMover(QWidget *parent)
 	: Component(parent, ToolType::SymlinkMover)
 {
@@ -65,10 +67,6 @@ void SymlinkMover::OnMoveClicked()
 		return;
 	}
 
-	if (!IsEmptyDir(dstPath)) {
-		return;
-	}
-
 	if (std::filesystem::is_symlink(dstPath)) {
 		return;
 	}
@@ -76,6 +74,20 @@ void SymlinkMover::OnMoveClicked()
 	if (std::filesystem::is_symlink(srcPath)) {
 		return;
 	}
+
+	auto confirmation = QMessageBox::warning(this, "Destination folder already exists",
+		QString("The destination folder <b>\"%1\"</b> already exists. Its contents will be merged with the contents of "
+			"<b>\"%2\"</b>.<br><br>Do you want to continue?")
+			.arg(ui.DstPathField->text(), ui.SrcPathField->text()),
+		QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
+	if (confirmation != QMessageBox::Ok) {
+		return;
+	}
+
+	ui.MoveButton->setEnabled(false);
+	Scope restoreMoveButton(std::function<void()>([this]() {
+		ui.MoveButton->setEnabled(!ui.SrcPathField->text().isEmpty() && !ui.DstPathField->text().isEmpty());
+	}));
 
 	auto srcWildcard = srcPath + L"\\*";
 
@@ -108,13 +120,4 @@ void SymlinkMover::OnMoveClicked()
 	catch (const std::exception& ex) {
 		QMessageBox::critical(this, "Error", QString("File operation error: \"%1\".").arg(ex.what()));
 	}
-}
-
-bool SymlinkMover::IsEmptyDir(const std::filesystem::path& path)
-{
-	for (auto& item : std::filesystem::directory_iterator(path)) {
-		return false;
-	}
-
-	return true;
 }

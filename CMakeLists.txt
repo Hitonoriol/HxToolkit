@@ -91,7 +91,7 @@ foreach(qlementinePatchName
 )
     set(qlementinePatch "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/patches/${qlementinePatchName}")
     execute_process(
-        COMMAND "${GIT_EXECUTABLE}" apply --reverse --check "${qlementinePatch}"
+        COMMAND "${GIT_EXECUTABLE}" apply --ignore-space-change --reverse --check "${qlementinePatch}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine"
         RESULT_VARIABLE qlementinePatchApplied
         OUTPUT_QUIET
@@ -99,7 +99,7 @@ foreach(qlementinePatchName
     )
     if(NOT qlementinePatchApplied EQUAL 0)
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" apply "${qlementinePatch}"
+            COMMAND "${GIT_EXECUTABLE}" apply --ignore-space-change "${qlementinePatch}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/qlementine"
             RESULT_VARIABLE qlementinePatchResult
             ERROR_VARIABLE qlementinePatchError
